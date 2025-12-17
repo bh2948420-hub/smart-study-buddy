@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import AddUserButton from '@/components/AddUserButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -342,6 +343,7 @@ const Dashboard = () => {
                   <Coffee className="h-5 w-5 text-accent" />
                   {t('takeBreak')}
                 </Button>
+                <AddUserButton />
               </CardContent>
             </Card>
 
