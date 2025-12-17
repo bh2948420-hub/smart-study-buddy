@@ -1,26 +1,34 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
-const AddUserButton = () => {
+const AddTestTaskButton = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleAddUser = async () => {
+  const handleAddTask = async () => {
     setLoading(true);
     
     try {
-      const testUser = {
-        name: `Test User ${Date.now()}`,
-        email: `test${Date.now()}@example.com`,
-        created_at: new Date().toISOString(),
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('يجب تسجيل الدخول أولاً');
+      }
+
+      const testTask = {
+        user_id: user.id,
+        title: `مهمة تجريبية ${Date.now()}`,
+        description: 'هذه مهمة تجريبية للاختبار',
+        due_date: new Date().toISOString(),
+        priority: 'medium',
+        completed: false,
       };
 
       const { data, error } = await supabase
-        .from('user')
-        .insert([testUser])
+        .from('tasks')
+        .insert([testTask])
         .select();
 
       if (error) {
@@ -29,17 +37,17 @@ const AddUserButton = () => {
 
       toast({
         title: "تم بنجاح! ✓",
-        description: `تمت إضافة المستخدم: ${testUser.name}`,
+        description: `تمت إضافة المهمة: ${testTask.title}`,
       });
       
-      console.log('User added:', data);
+      console.log('Task added:', data);
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.message || "فشل في إضافة المستخدم",
+        description: error.message || "فشل في إضافة المهمة",
         variant: "destructive",
       });
-      console.error('Error adding user:', error);
+      console.error('Error adding task:', error);
     } finally {
       setLoading(false);
     }
@@ -47,18 +55,19 @@ const AddUserButton = () => {
 
   return (
     <Button 
-      onClick={handleAddUser} 
+      onClick={handleAddTask} 
       disabled={loading}
-      className="gap-2"
+      variant="outline"
+      className="gap-2 w-full justify-start"
     >
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <UserPlus className="h-4 w-4" />
+        <Plus className="h-4 w-4" />
       )}
-      {loading ? 'جاري الإضافة...' : 'Add Test User'}
+      {loading ? 'جاري الإضافة...' : 'إضافة مهمة تجريبية'}
     </Button>
   );
 };
 
-export default AddUserButton;
+export default AddTestTaskButton;

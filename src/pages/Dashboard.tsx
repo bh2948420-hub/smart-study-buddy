@@ -1,125 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import AddUserButton from '@/components/AddUserButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+import { supabase } from '@/integrations/supabase/client';
+import { useTasks } from '@/hooks/useTasks';
+import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
 import {
   CalendarDays,
   List,
-  Plus,
   Brain,
   Coffee,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
+  LogOut,
+  Loader2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-interface Task {
-  id: string;
-  title: string;
-  date: Date;
-  time: string;
-  priority: 'high' | 'medium' | 'low';
-  completed: boolean;
-}
+import { isSameDay } from 'date-fns';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
+  const navigate = useNavigate();
   const [view, setView] = useState<'calendar' | 'list'>('list');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: language === 'ar' ? 'مراجعة الرياضيات' : 'Math Review',
-      date: new Date(),
-      time: '10:00',
-      priority: 'high',
-      completed: false,
-    },
-    {
-      id: '2',
-      title: language === 'ar' ? 'قراءة الفصل الثالث' : 'Read Chapter 3',
-      date: new Date(),
-      time: '14:00',
-      priority: 'medium',
-      completed: false,
-    },
-    {
-      id: '3',
-      title: language === 'ar' ? 'تمارين الفيزياء' : 'Physics Exercises',
-      date: new Date(),
-      time: '16:00',
-      priority: 'low',
-      completed: true,
-    },
-  ]);
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
 
-  const [newTask, setNewTask] = useState({
-    title: '',
-    time: '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
-  });
+  useEffect(() => {
+    // Check auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+      } else {
+        setUser(session.user);
+      }
+      setAuthLoading(false);
+    });
 
-  const priorityColors = {
-    high: 'border-l-destructive bg-destructive/5',
-    medium: 'border-l-warning bg-warning/5',
-    low: 'border-l-accent bg-accent/5',
-  };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate('/auth');
+      } else {
+        setUser(session.user);
+      }
+    });
 
-  const priorityBadgeColors = {
-    high: 'bg-destructive/10 text-destructive',
-    medium: 'bg-warning/10 text-warning',
-    low: 'bg-accent/10 text-accent',
-  };
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
-  const handleAddTask = () => {
-    if (!newTask.title || !newTask.time) {
-      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
-      return;
-    }
-
-    const task: Task = {
-      id: Date.now().toString(),
-      title: newTask.title,
-      date: selectedDate || new Date(),
-      time: newTask.time,
-      priority: newTask.priority,
-      completed: false,
-    };
-
-    setTasks([...tasks, task]);
-    setNewTask({ title: '', time: '', priority: 'medium' });
-    setDialogOpen(false);
-    toast.success(language === 'ar' ? 'تمت إضافة المهمة' : 'Task added successfully');
-  };
-
-  const toggleTaskComplete = (taskId: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
   const handleStartQuiz = () => {
@@ -134,9 +67,23 @@ const Dashboard = () => {
     );
   };
 
-  const todayTasks = tasks.filter(
-    (task) => task.date.toDateString() === new Date().toDateString()
+  // Filter tasks for today
+  const todayTasks = tasks.filter((task) =>
+    isSameDay(new Date(task.due_date), new Date())
   );
+
+  // Filter tasks for selected date
+  const selectedDateTasks = selectedDate
+    ? tasks.filter((task) => isSameDay(new Date(task.due_date), selectedDate))
+    : [];
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir={dir}>
@@ -144,15 +91,21 @@ const Dashboard = () => {
 
       <main className="container py-8">
         {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-2">
-            {t('welcomeBack')}, <span className="text-primary">{t('student')}!</span>
-          </h1>
-          <p className="text-muted-foreground">
-            {language === 'ar'
-              ? 'إليك نظرة عامة على مهامك لليوم'
-              : "Here's an overview of your tasks for today"}
-          </p>
+        <div className="mb-8 animate-fade-in flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              {t('welcomeBack')}, <span className="text-primary">{user?.email?.split('@')[0] || t('student')}!</span>
+            </h1>
+            <p className="text-muted-foreground">
+              {language === 'ar'
+                ? 'إليك نظرة عامة على مهامك لليوم'
+                : "Here's an overview of your tasks for today"}
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleLogout} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            {language === 'ar' ? 'خروج' : 'Logout'}
+          </Button>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -181,140 +134,29 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t('addTask')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('addTask')}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label>{t('taskTitle')}</Label>
-                      <Input
-                        placeholder={
-                          language === 'ar' ? 'مثال: مراجعة الرياضيات' : 'e.g., Math Review'
-                        }
-                        value={newTask.title}
-                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{t('taskTime')}</Label>
-                      <Input
-                        type="time"
-                        value={newTask.time}
-                        onChange={(e) => setNewTask({ ...newTask, time: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{t('priority')}</Label>
-                      <Select
-                        value={newTask.priority}
-                        onValueChange={(value: 'high' | 'medium' | 'low') =>
-                          setNewTask({ ...newTask, priority: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="high">{t('high')}</SelectItem>
-                          <SelectItem value="medium">{t('medium')}</SelectItem>
-                          <SelectItem value="low">{t('low')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                      <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                        {t('cancel')}
-                      </Button>
-                      <Button className="flex-1" onClick={handleAddTask}>
-                        {t('save')}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <AddTaskForm onAddTask={addTask} selectedDate={selectedDate} />
             </div>
 
             {/* Calendar View */}
             {view === 'calendar' && (
-              <Card className="animate-scale-in">
-                <CardContent className="pt-6">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="rounded-md border mx-auto"
-                  />
-                </CardContent>
-              </Card>
+              <TaskCalendar
+                tasks={tasks}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
             )}
 
             {/* Task List */}
-            <Card className="animate-fade-in">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  {t('todayTasks')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {todayTasks.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('noTasks')}</p>
-                  </div>
-                ) : (
-                  todayTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => toggleTaskComplete(task.id)}
-                      className={cn(
-                        'flex items-center gap-4 p-4 rounded-lg border-l-4 cursor-pointer transition-all hover:shadow-soft',
-                        priorityColors[task.priority],
-                        task.completed && 'opacity-60'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors',
-                          task.completed
-                            ? 'bg-accent border-accent text-accent-foreground'
-                            : 'border-muted-foreground'
-                        )}
-                      >
-                        {task.completed && <CheckCircle2 className="h-4 w-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={cn(
-                            'font-medium truncate',
-                            task.completed && 'line-through text-muted-foreground'
-                          )}
-                        >
-                          {task.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{task.time}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          'px-2 py-1 rounded-full text-xs font-medium',
-                          priorityBadgeColors[task.priority]
-                        )}
-                      >
-                        {t(task.priority)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+            <TaskList
+              tasks={view === 'calendar' ? selectedDateTasks : todayTasks}
+              loading={loading}
+              onToggle={toggleTask}
+              onDelete={deleteTask}
+              title={view === 'calendar' 
+                ? (language === 'ar' ? 'مهام التاريخ المحدد' : 'Tasks for Selected Date')
+                : t('todayTasks')
+              }
+            />
           </div>
 
           {/* Sidebar - Quick Actions */}
@@ -343,34 +185,37 @@ const Dashboard = () => {
                   <Coffee className="h-5 w-5 text-accent" />
                   {t('takeBreak')}
                 </Button>
-                <AddUserButton />
               </CardContent>
             </Card>
 
-            {/* Upcoming Sessions */}
+            {/* Stats Card */}
             <Card className="animate-slide-up" style={{ animationDelay: '100ms' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarDays className="h-5 w-5 text-primary" />
-                  {t('upcomingSessions')}
+                  {language === 'ar' ? 'إحصائيات' : 'Statistics'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <p className="font-medium text-sm">
-                    {language === 'ar' ? 'الرياضيات - الجبر' : 'Mathematics - Algebra'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {language === 'ar' ? 'اليوم، 10:00 صباحاً' : 'Today, 10:00 AM'}
-                  </p>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <span className="text-sm font-medium">
+                    {language === 'ar' ? 'إجمالي المهام' : 'Total Tasks'}
+                  </span>
+                  <span className="text-lg font-bold text-primary">{tasks.length}</span>
                 </div>
-                <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
-                  <p className="font-medium text-sm">
-                    {language === 'ar' ? 'الفيزياء - الميكانيكا' : 'Physics - Mechanics'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {language === 'ar' ? 'غداً، 2:00 مساءً' : 'Tomorrow, 2:00 PM'}
-                  </p>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-accent/5 border border-accent/20">
+                  <span className="text-sm font-medium">
+                    {language === 'ar' ? 'المكتملة' : 'Completed'}
+                  </span>
+                  <span className="text-lg font-bold text-accent">
+                    {tasks.filter(t => t.completed).length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-warning/5 border border-warning/20">
+                  <span className="text-sm font-medium">
+                    {language === 'ar' ? 'مهام اليوم' : "Today's Tasks"}
+                  </span>
+                  <span className="text-lg font-bold text-warning">{todayTasks.length}</span>
                 </div>
               </CardContent>
             </Card>
