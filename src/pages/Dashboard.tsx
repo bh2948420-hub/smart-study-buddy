@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useTasks } from '@/hooks/useTasks';
+import { useStudySessions } from '@/hooks/useStudySessions';
 import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
+import { PomodoroTimer } from '@/components/study/PomodoroTimer';
+import { StatsCards } from '@/components/dashboard/StatsCards';
 import {
   CalendarDays,
   List,
@@ -14,6 +17,8 @@ import {
   Coffee,
   LogOut,
   Loader2,
+  Play,
+  FolderOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
@@ -25,11 +30,16 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showTimer, setShowTimer] = useState(false);
   
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
+  const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
+
+  const todayStats = getTodayStats();
+  const completedTasks = tasks.filter(t => t.completed).length;
+  const focusPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
   useEffect(() => {
-    // Check auth state
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate('/auth');
@@ -59,12 +69,20 @@ const Dashboard = () => {
     toast.info(language === 'ar' ? 'قريباً! ميزة الاختبارات' : 'Coming soon! Quiz feature');
   };
 
-  const handleTakeBreak = () => {
-    toast.success(
-      language === 'ar'
-        ? 'استمتع باستراحتك! عد بعد 5 دقائق'
-        : 'Enjoy your break! Come back in 5 minutes'
-    );
+  const handleStartStudy = async () => {
+    if (activeSession) {
+      await endSession();
+      setShowTimer(false);
+    } else {
+      setShowTimer(true);
+      await startSession();
+    }
+  };
+
+  const handleSessionComplete = async (duration: number) => {
+    if (activeSession) {
+      await endSession();
+    }
   };
 
   // Filter tasks for today
@@ -89,9 +107,9 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background" dir={dir}>
       <Navbar />
 
-      <main className="container py-8">
+      <main className="container py-8 space-y-6">
         {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in flex items-center justify-between">
+        <div className="animate-fade-in flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">
               {t('welcomeBack')}, <span className="text-primary">{user?.email?.split('@')[0] || t('student')}!</span>
@@ -107,6 +125,15 @@ const Dashboard = () => {
             {language === 'ar' ? 'خروج' : 'Logout'}
           </Button>
         </div>
+
+        {/* Stats Cards */}
+        <StatsCards
+          totalStudyMinutes={todayStats.totalMinutes}
+          completedTasks={completedTasks}
+          totalTasks={tasks.length}
+          focusPercentage={focusPercentage}
+          upcomingTests={0}
+        />
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content - Study Planner */}
@@ -159,8 +186,13 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Sidebar - Quick Actions */}
+          {/* Sidebar */}
           <div className="space-y-6">
+            {/* Pomodoro Timer */}
+            {showTimer && (
+              <PomodoroTimer onSessionComplete={handleSessionComplete} />
+            )}
+
             {/* Quick Actions */}
             <Card className="animate-slide-up">
               <CardHeader>
@@ -169,6 +201,17 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <Button
+                  className="w-full gap-2 justify-start"
+                  variant={activeSession ? 'destructive' : 'default'}
+                  onClick={handleStartStudy}
+                >
+                  <Play className="h-5 w-5" />
+                  {activeSession 
+                    ? (language === 'ar' ? 'إنهاء الجلسة' : 'End Session')
+                    : (language === 'ar' ? 'ابدأ الدراسة' : 'Start Study')
+                  }
+                </Button>
                 <Button
                   className="w-full gap-2 justify-start"
                   variant="outline"
@@ -180,10 +223,10 @@ const Dashboard = () => {
                 <Button
                   className="w-full gap-2 justify-start"
                   variant="outline"
-                  onClick={handleTakeBreak}
+                  onClick={() => navigate('/materials')}
                 >
-                  <Coffee className="h-5 w-5 text-accent" />
-                  {t('takeBreak')}
+                  <FolderOpen className="h-5 w-5 text-accent" />
+                  {language === 'ar' ? 'المواد الدراسية' : 'Study Materials'}
                 </Button>
               </CardContent>
             </Card>
@@ -208,7 +251,7 @@ const Dashboard = () => {
                     {language === 'ar' ? 'المكتملة' : 'Completed'}
                   </span>
                   <span className="text-lg font-bold text-accent">
-                    {tasks.filter(t => t.completed).length}
+                    {completedTasks}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg bg-warning/5 border border-warning/20">

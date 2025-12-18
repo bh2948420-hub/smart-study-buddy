@@ -5,31 +5,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Upload, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Upload, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useMessages } from '@/hooks/useMessages';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const Chat = () => {
   const { t, dir, language } = useLanguage();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: t('chatWelcome'),
-      timestamp: new Date(),
-    },
-  ]);
+  const navigate = useNavigate();
+  const { messages, loading, addMessage, clearMessages, setMessages } = useMessages();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check auth
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+      } else {
+        setUser(user);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -41,62 +47,87 @@ const Chat = () => {
     }
   }, [messages]);
 
-  // Demo AI responses
-  const getAIResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    // Arabic responses
-    if (language === 'ar') {
-      if (lowerMessage.includes('رياضيات') || lowerMessage.includes('حساب')) {
-        return 'الرياضيات موضوع رائع! يمكنني مساعدتك في الجبر، الهندسة، حساب التفاضل والتكامل، وأكثر. ما هو السؤال المحدد الذي تحتاج مساعدة فيه؟';
-      }
-      if (lowerMessage.includes('فيزياء')) {
-        return 'الفيزياء تساعدنا على فهم كيف يعمل الكون! سواء كانت الميكانيكا، الديناميكا الحرارية، أو الكهرومغناطيسية، أنا هنا للمساعدة.';
-      }
-      if (lowerMessage.includes('امتحان') || lowerMessage.includes('اختبار')) {
-        return 'للتحضير للامتحان، أنصحك بـ: 1) مراجعة ملاحظاتك بانتظام 2) حل أسئلة سنوات سابقة 3) الحصول على قسط كافٍ من النوم قبل الامتحان. هل تريد نصائح أكثر تحديداً؟';
-      }
-      return 'شكراً على سؤالك! أنا هنا لمساعدتك في دراستك. يمكنك أن تسألني عن أي موضوع في المنهج وسأبذل قصارى جهدي لشرحه لك.';
-    }
-
-    // English responses
-    if (lowerMessage.includes('math') || lowerMessage.includes('calculate')) {
-      return "Mathematics is a fascinating subject! I can help you with algebra, geometry, calculus, and more. What specific problem would you like help with?";
-    }
-    if (lowerMessage.includes('physics')) {
-      return "Physics helps us understand how the universe works! Whether it's mechanics, thermodynamics, or electromagnetism, I'm here to help.";
-    }
-    if (lowerMessage.includes('exam') || lowerMessage.includes('test')) {
-      return "For exam preparation, I recommend: 1) Review your notes regularly 2) Practice past papers 3) Get enough sleep before the exam. Would you like more specific tips?";
-    }
-    return "Thank you for your question! I'm here to help you with your studies. Feel free to ask me about any topic in your curriculum, and I'll do my best to explain it clearly.";
-  };
-
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessageContent = input.trim();
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: getAIResponse(input),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
+    try {
+      // Save user message
+      await addMessage(userMessageContent, false);
+
+      // Build messages for AI
+      const aiMessages = messages.map(m => ({
+        role: m.is_ai ? 'assistant' : 'user',
+        content: m.message,
+      }));
+      aiMessages.push({ role: 'user', content: userMessageContent });
+
+      // Call AI
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: aiMessages, language }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      // Stream response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let textBuffer = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          textBuffer += decoder.decode(value, { stream: true });
+          
+          let newlineIndex: number;
+          while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+            let line = textBuffer.slice(0, newlineIndex);
+            textBuffer = textBuffer.slice(newlineIndex + 1);
+
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (line.startsWith(':') || line.trim() === '') continue;
+            if (!line.startsWith('data: ')) continue;
+
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                assistantContent += content;
+              }
+            } catch {
+              textBuffer = line + '\n' + textBuffer;
+              break;
+            }
+          }
+        }
+      }
+
+      // Save AI response
+      if (assistantContent) {
+        await addMessage(assistantContent, true);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error(language === 'ar' ? 'فشل في إرسال الرسالة' : 'Failed to send message');
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -114,6 +145,14 @@ const Chat = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col" dir={dir}>
       <Navbar />
@@ -128,62 +167,74 @@ const Chat = () => {
                 : 'Ask any question about your curriculum'}
             </p>
           </div>
-          <Button variant="outline" className="gap-2" onClick={handleUpload}>
-            <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('uploadCurriculum')}</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={clearMessages} title={language === 'ar' ? 'مسح المحادثة' : 'Clear chat'}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handleUpload}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('uploadCurriculum')}</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Chat Container */}
         <Card className="flex-1 flex flex-col overflow-hidden">
-          {/* Messages */}
           <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
             <div className="space-y-4">
+              {messages.length === 0 && (
+                <div className="flex gap-3 animate-fade-in">
+                  <div className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center shrink-0">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                  <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-muted text-foreground rounded-tl-sm">
+                    <p className="text-sm leading-relaxed">{t('chatWelcome')}</p>
+                  </div>
+                </div>
+              )}
+              
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={cn(
                     'flex gap-3 animate-fade-in',
-                    message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                    !message.is_ai ? 'flex-row-reverse' : 'flex-row'
                   )}
                 >
-                  {/* Avatar */}
                   <div
                     className={cn(
                       'h-8 w-8 rounded-full flex items-center justify-center shrink-0',
-                      message.role === 'user'
+                      !message.is_ai
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-accent text-accent-foreground'
                     )}
                   >
-                    {message.role === 'user' ? (
+                    {!message.is_ai ? (
                       <User className="h-4 w-4" />
                     ) : (
                       <Bot className="h-4 w-4" />
                     )}
                   </div>
 
-                  {/* Message Bubble */}
                   <div
                     className={cn(
                       'max-w-[80%] px-4 py-3 rounded-2xl',
-                      message.role === 'user'
+                      !message.is_ai
                         ? 'bg-primary text-primary-foreground rounded-tr-sm'
                         : 'bg-muted text-foreground rounded-tl-sm'
                     )}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
+                      {message.message}
                     </p>
                     <p
                       className={cn(
                         'text-xs mt-1 opacity-70',
-                        message.role === 'user'
+                        !message.is_ai
                           ? 'text-primary-foreground'
                           : 'text-muted-foreground'
                       )}
                     >
-                      {message.timestamp.toLocaleTimeString(language === 'ar' ? 'ar-EG' : 'en-US', {
+                      {new Date(message.created_at).toLocaleTimeString(language === 'ar' ? 'ar-EG' : 'en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -192,7 +243,6 @@ const Chat = () => {
                 </div>
               ))}
 
-              {/* Typing Indicator */}
               {isTyping && (
                 <div className="flex gap-3 animate-fade-in">
                   <div className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
@@ -209,7 +259,6 @@ const Chat = () => {
             </div>
           </ScrollArea>
 
-          {/* Input Area */}
           <div className="p-4 border-t border-border">
             <div className="flex gap-2">
               <Input

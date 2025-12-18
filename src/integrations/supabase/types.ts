@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      materials: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: number
+          subject: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: number
+          subject?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: number
+          subject?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          created_at: string
+          id: number
+          is_ai: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_ai?: boolean
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_ai?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          end_time: string | null
+          id: number
+          start_time: string
+          subject: string | null
+          task_id: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: number
+          start_time?: string
+          subject?: string | null
+          task_id?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: number
+          start_time?: string
+          subject?: string | null
+          task_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed: boolean
