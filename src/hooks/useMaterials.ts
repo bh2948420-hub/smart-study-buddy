@@ -136,10 +136,46 @@ export const useMaterials = () => {
   const getDownloadUrl = async (filePath: string) => {
     const { data, error } = await supabase.storage
       .from('study-materials')
-      .createSignedUrl(filePath, 3600);
+      .createSignedUrl(filePath, 3600, {
+        download: true
+      });
     
     if (error) throw error;
     return data.signedUrl;
+  };
+
+  const downloadFile = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('study-materials')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create blob URL and trigger download
+      const blob = new Blob([data], { type: data.type });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: 'تم التحميل',
+        description: `تم تحميل "${fileName}" بنجاح`,
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: 'خطأ في التحميل',
+        description: 'فشل في تحميل الملف',
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
   useEffect(() => {
@@ -153,6 +189,7 @@ export const useMaterials = () => {
     uploadMaterial,
     deleteMaterial,
     getDownloadUrl,
+    downloadFile,
     fetchMaterials,
   };
 };

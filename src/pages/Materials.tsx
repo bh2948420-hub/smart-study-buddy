@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 
 const Materials = () => {
   const { language, dir } = useLanguage();
-  const { materials, loading, uploading, uploadMaterial, deleteMaterial, getDownloadUrl } = useMaterials();
+  const { materials, loading, uploading, uploadMaterial, deleteMaterial, downloadFile } = useMaterials();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterSubject, setFilterSubject] = useState<string>('all');
@@ -82,10 +82,10 @@ const Materials = () => {
 
   const handleDownload = async (material: Material) => {
     try {
-      const url = await getDownloadUrl(material.file_path);
-      window.open(url, '_blank');
+      await downloadFile(material.file_path, material.file_name);
     } catch (error) {
-      toast.error(language === 'ar' ? 'فشل في تحميل الملف' : 'Failed to download file');
+      // Error already handled in downloadFile
+      console.error('Download failed:', error);
     }
   };
 
