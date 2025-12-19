@@ -14,6 +14,8 @@ export function Navbar() {
     { to: '/', label: t('home') },
     { to: '/dashboard', label: t('dashboard') },
     { to: '/chat', label: t('chat') },
+    { to: '/materials', label: language === 'ar' ? 'المواد' : 'Materials' },
+    { to: '/quizzes', label: language === 'ar' ? 'الاختبارات' : 'Quizzes' },
   ];
 
   const isActive = (path: string) => location.pathname === path;

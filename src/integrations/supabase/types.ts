@@ -71,6 +71,135 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions: {
+        Row: {
+          correct_answer: string
+          explanation: string | null
+          id: number
+          options: Json | null
+          order_index: number
+          question_text: string
+          question_type: string
+          quiz_id: number
+        }
+        Insert: {
+          correct_answer: string
+          explanation?: string | null
+          id?: never
+          options?: Json | null
+          order_index?: number
+          question_text: string
+          question_type: string
+          quiz_id: number
+        }
+        Update: {
+          correct_answer?: string
+          explanation?: string | null
+          id?: never
+          options?: Json | null
+          order_index?: number
+          question_text?: string
+          question_type?: string
+          quiz_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_results: {
+        Row: {
+          answers: Json | null
+          completed_at: string
+          id: number
+          percentage: number
+          quiz_id: number
+          score: number
+          time_spent_seconds: number | null
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string
+          id?: never
+          percentage: number
+          quiz_id: number
+          score: number
+          time_spent_seconds?: number | null
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string
+          id?: never
+          percentage?: number
+          quiz_id?: number
+          score?: number
+          time_spent_seconds?: number | null
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          id: number
+          material_id: number | null
+          subject: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: never
+          material_id?: number | null
+          subject?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: never
+          material_id?: number | null
+          subject?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_sessions: {
         Row: {
           created_at: string
