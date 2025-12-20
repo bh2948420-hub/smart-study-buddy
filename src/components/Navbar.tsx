@@ -67,10 +67,10 @@ export function Navbar() {
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/login">{t('login')}</Link>
+              <Link to="/auth">{t('login')}</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link to="/signup">{t('signUp')}</Link>
+              <Link to="/auth">{t('signUp')}</Link>
             </Button>
           </div>
 
@@ -105,12 +105,12 @@ export function Navbar() {
             ))}
             <div className="flex gap-2 pt-2 border-t border-border">
               <Button variant="ghost" size="sm" className="flex-1" asChild>
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                   {t('login')}
                 </Link>
               </Button>
               <Button size="sm" className="flex-1" asChild>
-                <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                   {t('signUp')}
                 </Link>
               </Button>
