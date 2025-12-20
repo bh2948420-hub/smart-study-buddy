@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      curriculum_context: {
+        Row: {
+          content_text: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: number
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: number
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: number
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           description: string | null
@@ -67,6 +97,39 @@ export type Database = {
           id?: number
           is_ai?: boolean
           message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: number
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -200,6 +263,42 @@ export type Database = {
           },
         ]
       }
+      study_schedule: {
+        Row: {
+          classroom: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: number
+          notes: string | null
+          start_time: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          classroom?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: number
+          notes?: string | null
+          start_time: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          classroom?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: number
+          notes?: string | null
+          start_time?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           created_at: string
@@ -271,6 +370,57 @@ export type Database = {
           priority?: string
           title?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          break_duration: number | null
+          created_at: string
+          dark_mode: boolean | null
+          display_name: string | null
+          id: number
+          level: number | null
+          notifications_enabled: boolean | null
+          pomodoro_duration: number | null
+          streak_days: number | null
+          study_goal_minutes: number | null
+          updated_at: string
+          user_id: string
+          xp_points: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          break_duration?: number | null
+          created_at?: string
+          dark_mode?: boolean | null
+          display_name?: string | null
+          id?: number
+          level?: number | null
+          notifications_enabled?: boolean | null
+          pomodoro_duration?: number | null
+          streak_days?: number | null
+          study_goal_minutes?: number | null
+          updated_at?: string
+          user_id: string
+          xp_points?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          break_duration?: number | null
+          created_at?: string
+          dark_mode?: boolean | null
+          display_name?: string | null
+          id?: number
+          level?: number | null
+          notifications_enabled?: boolean | null
+          pomodoro_duration?: number | null
+          streak_days?: number | null
+          study_goal_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+          xp_points?: number | null
         }
         Relationships: []
       }

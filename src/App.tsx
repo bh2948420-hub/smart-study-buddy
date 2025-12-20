@@ -10,6 +10,9 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Materials from "./pages/Materials";
 import Quizzes from "./pages/Quizzes";
+import UploadSchedule from "./pages/UploadSchedule";
+import Profile from "./pages/Profile";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/quizzes" element={<Quizzes />} />
+            <Route path="/upload-schedule" element={<UploadSchedule />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/reports" element={<Reports />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
