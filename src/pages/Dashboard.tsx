@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useTasks } from '@/hooks/useTasks';
 import { useStudySessions } from '@/hooks/useStudySessions';
+import { useStats } from '@/hooks/useStats';
 import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
 import { PomodoroTimer } from '@/components/study/PomodoroTimer';
 import { StatsCards } from '@/components/dashboard/StatsCards';
@@ -14,11 +15,11 @@ import {
   CalendarDays,
   List,
   Brain,
-  Coffee,
   LogOut,
   Loader2,
   Play,
   FolderOpen,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
@@ -34,6 +35,7 @@ const Dashboard = () => {
   
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
   const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
+  const { stats } = useStats();
 
   const todayStats = getTodayStats();
   const completedTasks = tasks.filter(t => t.completed).length;
@@ -66,7 +68,7 @@ const Dashboard = () => {
   };
 
   const handleStartQuiz = () => {
-    toast.info(language === 'ar' ? 'قريباً! ميزة الاختبارات' : 'Coming soon! Quiz feature');
+    navigate('/quizzes');
   };
 
   const handleStartStudy = async () => {
@@ -133,6 +135,8 @@ const Dashboard = () => {
           totalTasks={tasks.length}
           focusPercentage={focusPercentage}
           upcomingTests={0}
+          streakDays={stats.streakDays}
+          averageScore={stats.averageScore}
         />
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -227,6 +231,14 @@ const Dashboard = () => {
                 >
                   <FolderOpen className="h-5 w-5 text-accent" />
                   {language === 'ar' ? 'المواد الدراسية' : 'Study Materials'}
+                </Button>
+                <Button
+                  className="w-full gap-2 justify-start"
+                  variant="outline"
+                  onClick={() => navigate('/chat')}
+                >
+                  <MessageSquare className="h-5 w-5 text-blue-500" />
+                  {language === 'ar' ? 'مساعد الدراسة' : 'Study Assistant'}
                 </Button>
               </CardContent>
             </Card>

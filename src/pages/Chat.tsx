@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Upload, Loader2, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useMessages } from '@/hooks/useMessages';
+import { useCurriculum } from '@/hooks/useCurriculum';
+import { CurriculumUploader } from '@/components/chat/CurriculumUploader';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,6 +20,7 @@ const Chat = () => {
   const { t, dir, language } = useLanguage();
   const navigate = useNavigate();
   const { messages, loading, addMessage, clearMessages, setMessages } = useMessages();
+  const { getCurriculumContext } = useCurriculum();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -58,12 +61,19 @@ const Chat = () => {
       // Save user message
       await addMessage(userMessageContent, false);
 
-      // Build messages for AI
+      // Build messages for AI with curriculum context
+      const curriculumContext = getCurriculumContext();
       const aiMessages = messages.map(m => ({
         role: m.is_ai ? 'assistant' : 'user',
         content: m.message,
       }));
-      aiMessages.push({ role: 'user', content: userMessageContent });
+      
+      // Add curriculum context to the first message if available
+      let userContent = userMessageContent;
+      if (curriculumContext && aiMessages.length === 0) {
+        userContent = `[سياق المنهج المرفوع]:\n${curriculumContext}\n\n[سؤال الطالب]:\n${userMessageContent}`;
+      }
+      aiMessages.push({ role: 'user', content: userContent });
 
       // Call AI
       const response = await fetch(CHAT_URL, {
@@ -72,7 +82,7 @@ const Chat = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: aiMessages, language }),
+        body: JSON.stringify({ messages: aiMessages, language, curriculumContext }),
       });
 
       if (!response.ok) {
@@ -137,14 +147,6 @@ const Chat = () => {
     }
   };
 
-  const handleUpload = () => {
-    toast.info(
-      language === 'ar'
-        ? 'قريباً! ميزة رفع المنهج'
-        : 'Coming soon! Curriculum upload feature'
-    );
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -171,10 +173,7 @@ const Chat = () => {
             <Button variant="outline" size="icon" onClick={clearMessages} title={language === 'ar' ? 'مسح المحادثة' : 'Clear chat'}>
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button variant="outline" className="gap-2" onClick={handleUpload}>
-              <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('uploadCurriculum')}</span>
-            </Button>
+            <CurriculumUploader />
           </div>
         </div>
 
