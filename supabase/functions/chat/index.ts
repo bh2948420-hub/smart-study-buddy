@@ -11,16 +11,26 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, language = 'en' } = await req.json();
+    const { messages, language = 'en', curriculumContext = '' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = language === 'ar' 
-      ? `أنت مساعد دراسة ذكي يساعد الطلاب في فهم المواد الدراسية. أنت ودود ومتعاون وتشرح المفاهيم بوضوح. قدم إجابات مفصلة ومفيدة. استخدم أمثلة عملية عند الإمكان.`
-      : `You are a smart study assistant helping students understand their curriculum. You are friendly, helpful, and explain concepts clearly. Provide detailed and useful answers. Use practical examples when possible.`;
+    // Build system prompt with curriculum context
+    let systemPrompt = language === 'ar' 
+      ? `أنت مساعد دراسة ذكي اسمه "لميس" يساعد الطلاب في فهم المواد الدراسية. أنت ودود ومتعاون وتشرح المفاهيم بوضوح. قدم إجابات مفصلة ومفيدة. استخدم أمثلة عملية عند الإمكان. تحدث باللغة العربية دائماً.`
+      : `You are a smart study assistant named "Lamees" helping students understand their curriculum. You are friendly, helpful, and explain concepts clearly. Provide detailed and useful answers. Use practical examples when possible.`;
+    
+    // Add curriculum context if available
+    if (curriculumContext) {
+      systemPrompt += language === 'ar'
+        ? `\n\nلديك معرفة بالمنهج التالي الذي رفعه الطالب، استخدمه للإجابة على أسئلته:\n${curriculumContext}`
+        : `\n\nYou have knowledge of the following curriculum uploaded by the student, use it to answer their questions:\n${curriculumContext}`;
+    }
+
+    console.log('Calling AI with messages:', messages.length, 'curriculum context length:', curriculumContext.length);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
