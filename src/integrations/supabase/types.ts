@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          description: string
+          description_ar: string
+          icon: string
+          id: string
+          name: string
+          name_ar: string
+          points: number
+          requirement_type: string
+          requirement_value: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          description_ar: string
+          icon: string
+          id?: string
+          name: string
+          name_ar: string
+          points?: number
+          requirement_type: string
+          requirement_value: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          description_ar?: string
+          icon?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          points?: number
+          requirement_type?: string
+          requirement_value?: number
+        }
+        Relationships: []
+      }
       curriculum_context: {
         Row: {
           content_text: string | null
@@ -373,6 +412,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -384,6 +452,8 @@ export type Database = {
           level: number | null
           notifications_enabled: boolean | null
           pomodoro_duration: number | null
+          reminder_enabled: boolean | null
+          reminder_time: string | null
           streak_days: number | null
           study_goal_minutes: number | null
           updated_at: string
@@ -400,6 +470,8 @@ export type Database = {
           level?: number | null
           notifications_enabled?: boolean | null
           pomodoro_duration?: number | null
+          reminder_enabled?: boolean | null
+          reminder_time?: string | null
           streak_days?: number | null
           study_goal_minutes?: number | null
           updated_at?: string
@@ -416,6 +488,8 @@ export type Database = {
           level?: number | null
           notifications_enabled?: boolean | null
           pomodoro_duration?: number | null
+          reminder_enabled?: boolean | null
+          reminder_time?: string | null
           streak_days?: number | null
           study_goal_minutes?: number | null
           updated_at?: string

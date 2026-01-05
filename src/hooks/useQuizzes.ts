@@ -103,7 +103,7 @@ export const useQuizzes = () => {
     subject: string,
     difficulty: string = 'medium',
     materialId?: number,
-    questionCount: number = 5
+    questionCount: number = 10 // Default to 10 questions as requested
   ) => {
     setGenerating(true);
     try {

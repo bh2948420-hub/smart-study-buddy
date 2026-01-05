@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Stats {
+export interface Stats {
   totalStudyMinutes: number;
+  totalStudyHours: number;
   todayStudyMinutes: number;
   weeklyStudyMinutes: number;
   completedQuizzes: number;
+  quizzesCompleted: number; // Alias
   averageScore: number;
   streakDays: number;
   totalSessions: number;
@@ -14,9 +16,11 @@ interface Stats {
 export const useStats = () => {
   const [stats, setStats] = useState<Stats>({
     totalStudyMinutes: 0,
+    totalStudyHours: 0,
     todayStudyMinutes: 0,
     weeklyStudyMinutes: 0,
     completedQuizzes: 0,
+    quizzesCompleted: 0,
     averageScore: 0,
     streakDays: 0,
     totalSessions: 0,
@@ -72,6 +76,7 @@ export const useStats = () => {
         setStats(prev => ({
           ...prev,
           totalStudyMinutes: totalMinutes,
+          totalStudyHours: Math.round(totalMinutes / 60 * 10) / 10,
           todayStudyMinutes: todayMinutes,
           weeklyStudyMinutes: weeklyMinutes,
           totalSessions: sessions.length,
@@ -83,6 +88,7 @@ export const useStats = () => {
         setStats(prev => ({
           ...prev,
           completedQuizzes: quizResults.length,
+          quizzesCompleted: quizResults.length,
           averageScore: Math.round(avgScore),
         }));
       }
