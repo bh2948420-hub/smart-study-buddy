@@ -146,22 +146,28 @@ export const useMaterials = () => {
 
   const downloadFile = async (filePath: string, fileName: string) => {
     try {
-      const { data, error } = await supabase.storage
+      // Method 1: Use signed URL with download parameter (Chrome-friendly)
+      const { data: signedData, error: signedError } = await supabase.storage
         .from('study-materials')
-        .download(filePath);
+        .createSignedUrl(filePath, 60, { download: fileName });
 
-      if (error) throw error;
+      if (signedError) throw signedError;
 
-      // Create blob URL and trigger download
-      const blob = new Blob([data], { type: data.type });
-      const url = window.URL.createObjectURL(blob);
+      // Open in new tab to bypass Chrome blocking
       const link = document.createElement('a');
-      link.href = url;
+      link.href = signedData.signedUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       link.download = fileName;
+      
+      // For Chrome: simulate click in a user-initiated context
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      // Cleanup after a delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
 
       toast({
         title: 'تم التحميل',
@@ -169,12 +175,42 @@ export const useMaterials = () => {
       });
     } catch (error) {
       console.error('Error downloading file:', error);
-      toast({
-        title: 'خطأ في التحميل',
-        description: 'فشل في تحميل الملف',
-        variant: 'destructive',
-      });
-      throw error;
+      
+      // Fallback: try blob method
+      try {
+        const { data, error: downloadError } = await supabase.storage
+          .from('study-materials')
+          .download(filePath);
+
+        if (downloadError) throw downloadError;
+
+        const blob = new Blob([data], { type: data.type || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+
+        toast({
+          title: 'تم التحميل',
+          description: `تم تحميل "${fileName}" بنجاح`,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback download also failed:', fallbackError);
+        toast({
+          title: 'خطأ في التحميل',
+          description: 'فشل في تحميل الملف، حاول مرة أخرى',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
