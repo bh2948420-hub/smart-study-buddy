@@ -503,7 +503,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard: {
+        Args: { limit_count?: number; time_filter?: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          level: number
+          quizzes_completed: number
+          rank: number
+          streak_days: number
+          study_hours: number
+          xp_points: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
