@@ -13,6 +13,7 @@ import Quizzes from "./pages/Quizzes";
 import UploadSchedule from "./pages/UploadSchedule";
 import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/upload-schedule" element={<UploadSchedule />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
