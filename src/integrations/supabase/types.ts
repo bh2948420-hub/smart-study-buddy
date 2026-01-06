@@ -302,6 +302,57 @@ export type Database = {
           },
         ]
       }
+      study_insights: {
+        Row: {
+          average_quiz_score: number | null
+          created_at: string
+          id: number
+          improvement_recommendations: string[] | null
+          motivation_message: string | null
+          strongest_subject: string | null
+          study_pattern_analysis: string | null
+          total_quizzes_completed: number | null
+          total_study_minutes: number | null
+          total_tasks_completed: number | null
+          user_id: string
+          weakest_subject: string | null
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          average_quiz_score?: number | null
+          created_at?: string
+          id?: number
+          improvement_recommendations?: string[] | null
+          motivation_message?: string | null
+          strongest_subject?: string | null
+          study_pattern_analysis?: string | null
+          total_quizzes_completed?: number | null
+          total_study_minutes?: number | null
+          total_tasks_completed?: number | null
+          user_id: string
+          weakest_subject?: string | null
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          average_quiz_score?: number | null
+          created_at?: string
+          id?: number
+          improvement_recommendations?: string[] | null
+          motivation_message?: string | null
+          strongest_subject?: string | null
+          study_pattern_analysis?: string | null
+          total_quizzes_completed?: number | null
+          total_study_minutes?: number | null
+          total_tasks_completed?: number | null
+          user_id?: string
+          weakest_subject?: string | null
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       study_schedule: {
         Row: {
           classroom: string | null
