@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GraduationCap, Menu, X, Globe, Trophy, Brain } from 'lucide-react';
+import { GraduationCap, Menu, X, Globe, Trophy, Brain, Focus } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ export function Navbar() {
   const navLinks = [
     { to: '/', label: t('home') },
     { to: '/dashboard', label: t('dashboard') },
+    { to: '/focus', label: language === 'ar' ? 'وضع التركيز' : 'Focus Mode', icon: Focus },
     { to: '/chat', label: t('chat') },
     { to: '/materials', label: language === 'ar' ? 'المواد' : 'Materials' },
     { to: '/quizzes', label: language === 'ar' ? 'الاختبارات' : 'Quizzes' },
