@@ -11,6 +11,8 @@ import { useStats } from '@/hooks/useStats';
 import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
 import { PomodoroTimer } from '@/components/study/PomodoroTimer';
 import { StatsCards } from '@/components/dashboard/StatsCards';
+import { DailyQuizWidget } from '@/components/dashboard/DailyQuizWidget';
+import { WeeklyChallenges } from '@/components/challenges/WeeklyChallenges';
 import {
   CalendarDays,
   List,
@@ -20,6 +22,7 @@ import {
   Play,
   FolderOpen,
   MessageSquare,
+  Focus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
@@ -192,10 +195,16 @@ const Dashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Daily Quiz Widget */}
+            <DailyQuizWidget />
+
             {/* Pomodoro Timer */}
             {showTimer && (
               <PomodoroTimer onSessionComplete={handleSessionComplete} />
             )}
+
+            {/* Weekly Challenges */}
+            <WeeklyChallenges />
 
             {/* Quick Actions */}
             <Card className="animate-slide-up">
@@ -207,7 +216,15 @@ const Dashboard = () => {
               <CardContent className="space-y-3">
                 <Button
                   className="w-full gap-2 justify-start"
-                  variant={activeSession ? 'destructive' : 'default'}
+                  variant="default"
+                  onClick={() => navigate('/focus')}
+                >
+                  <Focus className="h-5 w-5" />
+                  {language === 'ar' ? 'وضع التركيز' : 'Focus Mode'}
+                </Button>
+                <Button
+                  className="w-full gap-2 justify-start"
+                  variant={activeSession ? 'destructive' : 'outline'}
                   onClick={handleStartStudy}
                 >
                   <Play className="h-5 w-5" />
@@ -240,38 +257,6 @@ const Dashboard = () => {
                   <MessageSquare className="h-5 w-5 text-blue-500" />
                   {language === 'ar' ? 'مساعد الدراسة' : 'Study Assistant'}
                 </Button>
-              </CardContent>
-            </Card>
-
-            {/* Stats Card */}
-            <Card className="animate-slide-up" style={{ animationDelay: '100ms' }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-primary" />
-                  {language === 'ar' ? 'إحصائيات' : 'Statistics'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <span className="text-sm font-medium">
-                    {language === 'ar' ? 'إجمالي المهام' : 'Total Tasks'}
-                  </span>
-                  <span className="text-lg font-bold text-primary">{tasks.length}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-accent/5 border border-accent/20">
-                  <span className="text-sm font-medium">
-                    {language === 'ar' ? 'المكتملة' : 'Completed'}
-                  </span>
-                  <span className="text-lg font-bold text-accent">
-                    {completedTasks}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-warning/5 border border-warning/20">
-                  <span className="text-sm font-medium">
-                    {language === 'ar' ? 'مهام اليوم' : "Today's Tasks"}
-                  </span>
-                  <span className="text-lg font-bold text-warning">{todayTasks.length}</span>
-                </div>
               </CardContent>
             </Card>
           </div>

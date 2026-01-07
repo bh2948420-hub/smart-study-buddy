@@ -83,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_quiz_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          quiz_date: string
+          score: number
+          time_spent_seconds: number | null
+          total_questions: number
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quiz_date?: string
+          score: number
+          time_spent_seconds?: number | null
+          total_questions?: number
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quiz_date?: string
+          score?: number
+          time_spent_seconds?: number | null
+          total_questions?: number
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           description: string | null
@@ -492,6 +525,50 @@ export type Database = {
           },
         ]
       }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          updated_at: string
+          user_id: string
+          xp_claimed: boolean
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+          xp_claimed?: boolean
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+          xp_claimed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -546,6 +623,51 @@ export type Database = {
           updated_at?: string
           user_id?: string
           xp_points?: number | null
+        }
+        Relationships: []
+      }
+      weekly_challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          description: string
+          description_ar: string
+          icon: string
+          id: string
+          target_value: number
+          title: string
+          title_ar: string
+          week_end: string
+          week_start: string
+          xp_reward: number
+        }
+        Insert: {
+          challenge_type: string
+          created_at?: string
+          description: string
+          description_ar: string
+          icon?: string
+          id?: string
+          target_value: number
+          title: string
+          title_ar: string
+          week_end: string
+          week_start: string
+          xp_reward?: number
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          description?: string
+          description_ar?: string
+          icon?: string
+          id?: string
+          target_value?: number
+          title?: string
+          title_ar?: string
+          week_end?: string
+          week_start?: string
+          xp_reward?: number
         }
         Relationships: []
       }
