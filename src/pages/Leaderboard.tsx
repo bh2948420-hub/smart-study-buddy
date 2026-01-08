@@ -36,6 +36,10 @@ export default function Leaderboard() {
     loading: language === 'ar' ? 'جاري التحميل...' : 'Loading...',
     you: language === 'ar' ? 'أنت' : 'You',
     topStudents: language === 'ar' ? 'أفضل الطلاب' : 'Top Students',
+    motivation: language === 'ar' ? 'واصل الدراسة لتحقق مراتب أعلى!' : 'Keep studying to climb the ranks!',
+    yourRank: language === 'ar' ? 'ترتيبك' : 'Your Rank',
+    notRanked: language === 'ar' ? 'غير مصنف بعد' : 'Not ranked yet',
+    startStudying: language === 'ar' ? 'ابدأ الدراسة لتظهر في القائمة!' : 'Start studying to appear on the board!',
   };
 
   useEffect(() => {
