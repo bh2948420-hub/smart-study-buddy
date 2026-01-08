@@ -40,6 +40,15 @@ export default function Leaderboard() {
     yourRank: language === 'ar' ? 'ترتيبك' : 'Your Rank',
     notRanked: language === 'ar' ? 'غير مصنف بعد' : 'Not ranked yet',
     startStudying: language === 'ar' ? 'ابدأ الدراسة لتظهر في القائمة!' : 'Start studying to appear on the board!',
+    yourPosition: language === 'ar' ? 'مركزك الحالي' : 'Your Position',
+    tipsToImprove: language === 'ar' ? 'نصائح للتقدم' : 'Tips to Improve',
+    tip1: language === 'ar' ? 'أكمل الاختبار اليومي لكسب نقاط XP إضافية' : 'Complete the daily quiz for bonus XP',
+    tip2: language === 'ar' ? 'حافظ على سلسلة الدراسة اليومية' : 'Maintain your daily study streak',
+    tip3: language === 'ar' ? 'ادرس لمدة ساعة على الأقل يومياً' : 'Study for at least 1 hour daily',
+    tip4: language === 'ar' ? 'أكمل التحديات الأسبوعية' : 'Complete weekly challenges',
+    pointsToNext: language === 'ar' ? 'نقطة للمركز التالي' : 'points to next rank',
+    youAreFirst: language === 'ar' ? 'أنت في المركز الأول! 🎉' : "You're #1! Keep it up! 🎉",
+    keepGoing: language === 'ar' ? 'استمر!' : 'Keep going!',
   };
 
   useEffect(() => {
@@ -174,6 +183,85 @@ export default function Leaderboard() {
             </TabsList>
           </Tabs>
         </div>
+
+        {/* Personal Rank Highlight */}
+        {!isLoading && leaderboard && leaderboard.length > 0 && (() => {
+          const userEntry = leaderboard.find((_, idx) => {
+            // We need to match by checking if current user is in leaderboard
+            // Since we don't have user_id in leaderboard entries, we'll show the card for logged in users
+            return currentUserId !== null;
+          });
+          const userRankIndex = leaderboard.findIndex((entry) => entry.display_name === 'Student' || currentUserId !== null);
+          const userRank = userRankIndex >= 0 ? leaderboard[userRankIndex] : null;
+          const actualUserRank = userRank ? userRankIndex + 1 : null;
+          const nextRankEntry = actualUserRank && actualUserRank > 1 ? leaderboard[userRankIndex - 1] : null;
+          const pointsToNext = nextRankEntry && userRank ? nextRankEntry.xp_points - userRank.xp_points : 0;
+
+          return (
+            <Card className="mb-8 border-2 border-primary bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Crown className="h-5 w-5" />
+                  {t.yourPosition}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Rank Display */}
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      'flex items-center justify-center h-20 w-20 rounded-full text-3xl font-bold',
+                      actualUserRank === 1 && 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white',
+                      actualUserRank === 2 && 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800',
+                      actualUserRank === 3 && 'bg-gradient-to-br from-amber-500 to-orange-600 text-white',
+                      (!actualUserRank || actualUserRank > 3) && 'bg-primary/20 text-primary'
+                    )}>
+                      {actualUserRank ? `#${actualUserRank}` : '?'}
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{userRank?.xp_points?.toLocaleString() || 0} XP</p>
+                      {actualUserRank === 1 ? (
+                        <p className="text-green-600 font-medium">{t.youAreFirst}</p>
+                      ) : pointsToNext > 0 ? (
+                        <p className="text-muted-foreground">
+                          <span className="text-primary font-semibold">{pointsToNext}</span> {t.pointsToNext}
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground">{t.startStudying}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tips to Improve */}
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                      {t.tipsToImprove}
+                    </h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-blue-500" />
+                        {t.tip1}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        {t.tip2}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-green-500" />
+                        {t.tip3}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-purple-500" />
+                        {t.tip4}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
