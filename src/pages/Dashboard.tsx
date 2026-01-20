@@ -8,11 +8,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTasks } from '@/hooks/useTasks';
 import { useStudySessions } from '@/hooks/useStudySessions';
 import { useStats } from '@/hooks/useStats';
+import { useDataSync } from '@/hooks/useDataSync';
 import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
 import { PomodoroTimer } from '@/components/study/PomodoroTimer';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { DailyQuizWidget } from '@/components/dashboard/DailyQuizWidget';
 import { WeeklyChallenges } from '@/components/challenges/WeeklyChallenges';
+import { RecentQuizResults } from '@/components/dashboard/RecentQuizResults';
+import { FocusSessionSummary } from '@/components/dashboard/FocusSessionSummary';
 import {
   CalendarDays,
   List,
@@ -39,10 +42,24 @@ const Dashboard = () => {
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
   const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
   const { stats } = useStats();
+  const { syncTaskComplete, syncFocusSession } = useDataSync();
 
   const todayStats = getTodayStats();
   const completedTasks = tasks.filter(t => t.completed).length;
   const focusPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+
+  // Enhanced toggleTask with XP sync
+  const handleToggleTask = async (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task && !task.completed) {
+      // Task is being completed
+      await toggleTask(taskId);
+      await syncTaskComplete(taskId);
+      toast.success(language === 'ar' ? '+10 XP!' : '+10 XP!');
+    } else {
+      await toggleTask(taskId);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -184,7 +201,7 @@ const Dashboard = () => {
             <TaskList
               tasks={view === 'calendar' ? selectedDateTasks : todayTasks}
               loading={loading}
-              onToggle={toggleTask}
+              onToggle={handleToggleTask}
               onDelete={deleteTask}
               title={view === 'calendar' 
                 ? (language === 'ar' ? 'مهام التاريخ المحدد' : 'Tasks for Selected Date')
@@ -195,6 +212,12 @@ const Dashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Focus Session Summary - Links to Focus Mode */}
+            <FocusSessionSummary />
+
+            {/* Recent Quiz Results - Links to Quizzes */}
+            <RecentQuizResults />
+
             {/* Daily Quiz Widget */}
             <DailyQuizWidget />
 
@@ -254,7 +277,7 @@ const Dashboard = () => {
                   variant="outline"
                   onClick={() => navigate('/chat')}
                 >
-                  <MessageSquare className="h-5 w-5 text-blue-500" />
+                  <MessageSquare className="h-5 w-5 text-primary" />
                   {language === 'ar' ? 'مساعد الدراسة' : 'Study Assistant'}
                 </Button>
               </CardContent>
