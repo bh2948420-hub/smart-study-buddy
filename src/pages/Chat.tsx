@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ const Chat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Check auth
   useEffect(() => {
@@ -41,22 +42,25 @@ const Chat = () => {
     checkAuth();
   }, [navigate]);
 
-  // Auto-scroll to bottom
-  const scrollToBottom = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-    }
-  };
+  // Auto-scroll to bottom - improved
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  const streamChat = async (userMessage: string) => {
+  const streamChat = async (userMessage: string, signal: AbortSignal) => {
     const curriculumContext = getCurriculumContext();
     
-    // Build messages array for API
-    const apiMessages = messages.map(m => ({
+    // Build messages array for API - only use last 20 messages to avoid overload
+    const recentMessages = messages.slice(-20);
+    const apiMessages = recentMessages.map(m => ({
       role: m.is_ai ? 'assistant' : 'user',
       content: m.message
     }));
@@ -73,6 +77,7 @@ const Chat = () => {
         language,
         curriculumContext,
       }),
+      signal,
     });
 
     if (!response.ok) {
@@ -92,45 +97,48 @@ const Chat = () => {
     let assistantContent = '';
     let textBuffer = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      textBuffer += decoder.decode(value, { stream: true });
+        textBuffer += decoder.decode(value, { stream: true });
 
-      // Process line by line
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
+        // Process line by line
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
 
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (line.startsWith(':') || line.trim() === '') continue;
-        if (!line.startsWith('data: ')) continue;
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
 
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') break;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
 
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            // Update the last message in state
-            setMessages(prev => {
-              const last = prev[prev.length - 1];
-              if (last?.is_ai && last.id === -1) {
-                return prev.map((m, i) => 
-                  i === prev.length - 1 ? { ...m, message: assistantContent } : m
-                );
-              }
-              return prev;
-            });
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              // Update the last message in state (use functional update to avoid stale state)
+              setMessages(prev => {
+                const newMessages = [...prev];
+                const lastIndex = newMessages.length - 1;
+                if (lastIndex >= 0 && newMessages[lastIndex]?.is_ai && newMessages[lastIndex].id === -1) {
+                  newMessages[lastIndex] = { ...newMessages[lastIndex], message: assistantContent };
+                }
+                return newMessages;
+              });
+            }
+          } catch {
+            // Incomplete JSON, continue
           }
-        } catch {
-          // Incomplete JSON, continue
         }
       }
+    } finally {
+      reader.releaseLock();
     }
 
     return assistantContent;
@@ -140,18 +148,25 @@ const Chat = () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setInput('');
     setIsLoading(true);
 
+    const messageTimestamp = Date.now();
+
     // Add user message immediately (optimistic)
     const userMsg: Message = {
-      id: Date.now(),
+      id: messageTimestamp,
       user_id: user?.id ?? 'local',
       message: trimmed,
       is_ai: false,
       created_at: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, userMsg]);
 
     // Add placeholder for AI response
     const aiPlaceholder: Message = {
@@ -161,24 +176,31 @@ const Chat = () => {
       is_ai: true,
       created_at: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, aiPlaceholder]);
+
+    setMessages(prev => [...prev, userMsg, aiPlaceholder]);
 
     try {
-      // Save user message to DB
-      await addMessage(trimmed, false);
+      // Save user message to DB (non-blocking)
+      addMessage(trimmed, false).catch(console.error);
 
       // Stream AI response
-      const aiContent = await streamChat(trimmed);
+      const aiContent = await streamChat(trimmed, abortControllerRef.current.signal);
 
       // Update placeholder with final content and real ID
       setMessages(prev => prev.map(m => 
-        m.id === -1 ? { ...m, id: Date.now() + 1, message: aiContent } : m
+        m.id === -1 ? { ...m, id: messageTimestamp + 1, message: aiContent } : m
       ));
 
-      // Save AI message to DB
-      await addMessage(aiContent, true);
+      // Save AI message to DB (non-blocking)
+      if (aiContent) {
+        addMessage(aiContent, true).catch(console.error);
+      }
 
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        // Request was cancelled, don't show error
+        return;
+      }
       console.error('Chat error:', error);
       // Remove the placeholder on error
       setMessages(prev => prev.filter(m => m.id !== -1));
@@ -189,15 +211,25 @@ const Chat = () => {
       });
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -207,50 +239,68 @@ const Chat = () => {
     );
   }
 
+  const chatText = {
+    title: language === 'ar' ? 'المساعد الذكي' : 'AI Assistant',
+    subtitle: language === 'ar' ? 'اسأل أي سؤال عن منهجك' : 'Ask any question about your curriculum',
+    clearChat: language === 'ar' ? 'مسح المحادثة' : 'Clear chat',
+    typing: language === 'ar' ? 'جاري الكتابة...' : 'Typing...',
+    placeholder: language === 'ar' ? 'اكتب سؤالك هنا...' : 'Type your question here...',
+    send: language === 'ar' ? 'إرسال' : 'Send',
+    welcome: language === 'ar' 
+      ? 'مرحباً! أنا لميس، مساعدك الدراسي الذكي. كيف يمكنني مساعدتك اليوم؟'
+      : 'Hello! I am Lamees, your smart study assistant. How can I help you today?',
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col" dir={dir}>
       <Navbar />
 
-      <main className="flex-1 container py-4 md:py-8 flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
+      <main className="flex-1 container py-4 flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
         <div className="flex items-center justify-between mb-4 shrink-0">
           <div>
-            <h1 className="text-2xl font-bold">{t('chat')}</h1>
-            <p className="text-sm text-muted-foreground">
-              {language === 'ar'
-                ? 'اسأل أي سؤال عن منهجك'
-                : 'Ask any question about your curriculum'}
-            </p>
+            <h1 className="text-2xl font-bold">{chatText.title}</h1>
+            <p className="text-sm text-muted-foreground">{chatText.subtitle}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={clearMessages} title={language === 'ar' ? 'مسح المحادثة' : 'Clear chat'}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={clearMessages} 
+              title={chatText.clearChat}
+              disabled={isLoading}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
             <CurriculumUploader />
           </div>
         </div>
 
-        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Scrollable messages area */}
+        <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Scrollable messages area - improved for all devices */}
           <div 
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto p-4"
-            style={{ overscrollBehavior: 'contain' }}
+            className="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+              minHeight: 0,
+            }}
           >
-            <div className="space-y-4">
+            <div className="space-y-4 pb-4">
               {messages.length === 0 && (
                 <div className="flex gap-3 animate-fade-in">
                   <div className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center shrink-0">
                     <Bot className="h-4 w-4" />
                   </div>
                   <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-muted text-foreground rounded-tl-sm">
-                    <p className="text-sm leading-relaxed">{t('chatWelcome')}</p>
+                    <p className="text-sm leading-relaxed">{chatText.welcome}</p>
                   </div>
                 </div>
               )}
               
               {messages.map((message) => (
                 <div
-                  key={message.id}
+                  key={`${message.id}-${message.created_at}`}
                   className={cn(
                     'flex gap-3 animate-fade-in',
                     !message.is_ai ? 'flex-row-reverse' : 'flex-row'
@@ -282,7 +332,7 @@ const Chat = () => {
                     {message.is_ai && message.id === -1 && !message.message ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">{language === 'ar' ? 'جاري الكتابة...' : 'Typing...'}</span>
+                        <span className="text-sm">{chatText.typing}</span>
                       </div>
                     ) : (
                       <>
@@ -307,29 +357,34 @@ const Chat = () => {
                   </div>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-1" />
             </div>
           </div>
 
-          {/* Input area */}
-          <div className="p-4 border-t border-border shrink-0">
+          {/* Input area - always visible at bottom */}
+          <div className="p-4 border-t border-border shrink-0 bg-background">
             <div className="flex gap-2">
               <Input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={t('chatPlaceholder')}
+                onKeyDown={handleKeyDown}
+                placeholder={chatText.placeholder}
                 className="flex-1"
                 disabled={isLoading}
+                autoComplete="off"
               />
-              <Button onClick={handleSendMessage} disabled={!input.trim() || isLoading} className="gap-2">
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={!input.trim() || isLoading} 
+                className="gap-2"
+              >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                <span className="hidden sm:inline">{t('send')}</span>
+                <span className="hidden sm:inline">{chatText.send}</span>
               </Button>
             </div>
           </div>

@@ -31,7 +31,7 @@ const InsightCard = ({ insight, language }: { insight: StudyInsight; language: s
   
   const t = {
     weeklyInsights: language === 'ar' ? 'تحليلات الدراسة الأسبوعية' : 'Weekly Study Insights',
-    aiGenerated: language === 'ar' ? 'تم بواسطة الذكاء الاصطناعي' : 'AI Generated',
+    aiGenerated: language === 'ar' ? 'تم إنشاؤه بالذكاء الاصطناعي' : 'AI Generated',
     studyTime: language === 'ar' ? 'وقت الدراسة' : 'Study Time',
     tasksDone: language === 'ar' ? 'المهام المكتملة' : 'Tasks Done',
     quizzes: language === 'ar' ? 'الاختبارات' : 'Quizzes',
@@ -41,6 +41,7 @@ const InsightCard = ({ insight, language }: { insight: StudyInsight; language: s
     studyPatternAnalysis: language === 'ar' ? 'تحليل نمط الدراسة' : 'Study Pattern Analysis',
     improvementRecommendations: language === 'ar' ? 'توصيات التحسين' : 'Improvement Recommendations',
     hours: language === 'ar' ? 'س' : 'h',
+    motivationTitle: language === 'ar' ? 'رسالة تحفيزية' : 'Motivation',
   };
   
   return (
@@ -178,8 +179,13 @@ const InsightCard = ({ insight, language }: { insight: StudyInsight; language: s
       {/* Motivation Message */}
       {insight.motivation_message && (
         <Card className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="p-6 text-center">
-            <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center justify-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              {t.motivationTitle}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-center">
             <p className="text-lg font-medium italic text-foreground">"{insight.motivation_message}"</p>
           </CardContent>
         </Card>
