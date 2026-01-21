@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Sparkles, Loader2, BookOpen, Brain, Target } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Loader2, BookOpen, Brain, Target, FileText, CheckCircle2 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuizzes } from '@/hooks/useQuizzes';
@@ -39,6 +40,8 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
   const [difficulty, setDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState([10]);
   const [extracting, setExtracting] = useState(false);
+  const [extractionStatus, setExtractionStatus] = useState<'idle' | 'extracting' | 'success' | 'fallback'>('idle');
+  const [extractedChars, setExtractedChars] = useState(0);
 
   const t = {
     title: language === 'ar' ? 'إنشاء اختبار ذكي' : 'Generate Smart Quiz',
@@ -59,7 +62,33 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
     success: language === 'ar' ? 'تم إنشاء الاختبار بنجاح!' : 'Quiz created successfully!',
     goToQuiz: language === 'ar' ? 'انتقل للاختبار' : 'Go to Quiz',
     error: language === 'ar' ? 'فشل في إنشاء الاختبار' : 'Failed to generate quiz',
+    extractingPdf: language === 'ar' ? 'جاري استخراج النص من PDF...' : 'Extracting text from PDF...',
     extracting: language === 'ar' ? 'جاري تحليل الملف...' : 'Analyzing file...',
+    pdfExtracted: language === 'ar' ? 'تم استخراج النص بنجاح' : 'Text extracted successfully',
+    chars: language === 'ar' ? 'حرف' : 'chars',
+    usingMetadata: language === 'ar' ? 'استخدام بيانات الملف' : 'Using file metadata',
+  };
+
+  // Extract text from PDF using edge function
+  const extractPdfText = async (filePath: string): Promise<string> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await supabase.functions.invoke('extract-pdf-text', {
+      body: { filePath }
+    });
+
+    if (response.error) {
+      console.error('PDF extraction error:', response.error);
+      return '';
+    }
+
+    if (response.data?.extracted && response.data?.text) {
+      setExtractedChars(response.data.charCount || response.data.text.length);
+      return response.data.text;
+    }
+
+    return '';
   };
 
   const handleGenerate = async () => {
@@ -67,26 +96,37 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
 
     try {
       setExtracting(true);
+      setExtractionStatus('extracting');
       
-      // Get file content - for text/pdf files, download and extract
       let content = '';
       
-      // Download the file to extract content
-      const { data, error } = await supabase.storage
-        .from('study-materials')
-        .download(material.file_path);
+      // Handle different file types
+      if (material.file_type === 'pdf') {
+        // Extract text from PDF using edge function
+        const pdfText = await extractPdfText(material.file_path);
+        
+        if (pdfText && pdfText.length > 100) {
+          content = pdfText;
+          setExtractionStatus('success');
+        } else {
+          // Fallback to metadata-based generation
+          setExtractionStatus('fallback');
+          content = buildFallbackContent(material);
+        }
+      } else if (material.file_type === 'document' || material.file_name.endsWith('.txt')) {
+        // Download and read text files directly
+        const { data, error } = await supabase.storage
+          .from('study-materials')
+          .download(material.file_path);
 
-      if (error) throw error;
-
-      // For text-based files, extract content
-      if (material.file_type === 'document' || material.file_name.endsWith('.txt')) {
+        if (error) throw error;
         content = await data.text();
+        setExtractedChars(content.length);
+        setExtractionStatus('success');
       } else {
-        // For PDFs and other files, use file name and description as context
-        content = `عنوان الملف: ${material.file_name}\n`;
-        if (material.subject) content += `المادة: ${material.subject}\n`;
-        if (material.description) content += `الوصف: ${material.description}\n`;
-        content += `\nيرجى إنشاء أسئلة عامة مناسبة لهذه المادة بناءً على المعلومات المتوفرة.`;
+        // For images, videos, etc., use fallback
+        setExtractionStatus('fallback');
+        content = buildFallbackContent(material);
       }
 
       setExtracting(false);
@@ -110,15 +150,30 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
       });
 
       onOpenChange(false);
-      setTitle('');
-      setDifficulty('medium');
-      setQuestionCount([10]);
+      resetState();
 
     } catch (error) {
       console.error('Error generating quiz:', error);
       toast.error(t.error);
       setExtracting(false);
+      setExtractionStatus('idle');
     }
+  };
+
+  const buildFallbackContent = (mat: Material): string => {
+    let content = `عنوان الملف: ${mat.file_name}\n`;
+    if (mat.subject) content += `المادة: ${mat.subject}\n`;
+    if (mat.description) content += `الوصف: ${mat.description}\n`;
+    content += `\nيرجى إنشاء أسئلة عامة مناسبة لهذه المادة بناءً على المعلومات المتوفرة.`;
+    return content;
+  };
+
+  const resetState = () => {
+    setTitle('');
+    setDifficulty('medium');
+    setQuestionCount([10]);
+    setExtractionStatus('idle');
+    setExtractedChars(0);
   };
 
   if (!material) return null;
@@ -139,14 +194,33 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Source File */}
+          {/* Source File with Extraction Status */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-            <BookOpen className="h-5 w-5 text-primary" />
+            {material.file_type === 'pdf' ? (
+              <FileText className="h-5 w-5 text-red-500" />
+            ) : (
+              <BookOpen className="h-5 w-5 text-primary" />
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">{material.file_name}</p>
-              {material.subject && (
-                <p className="text-xs text-muted-foreground">{material.subject}</p>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                {material.subject && (
+                  <Badge variant="secondary" className="text-xs">
+                    {material.subject}
+                  </Badge>
+                )}
+                {extractionStatus === 'success' && (
+                  <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {t.pdfExtracted} ({extractedChars.toLocaleString()} {t.chars})
+                  </Badge>
+                )}
+                {extractionStatus === 'fallback' && (
+                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50">
+                    {t.usingMetadata}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 
@@ -214,7 +288,7 @@ export function QuizGeneratorDialog({ material, open, onOpenChange }: QuizGenera
             {isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {extracting ? t.extracting : t.generating}
+                {extracting ? (material.file_type === 'pdf' ? t.extractingPdf : t.extracting) : t.generating}
               </>
             ) : (
               <>
