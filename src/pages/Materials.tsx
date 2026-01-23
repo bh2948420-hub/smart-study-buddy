@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMaterials, Material } from '@/hooks/useMaterials';
@@ -11,6 +11,7 @@ import { MaterialsUploadZone } from '@/components/materials/MaterialsUploadZone'
 import { MaterialsBySubject } from '@/components/materials/MaterialsBySubject';
 import { MaterialPreviewDialog } from '@/components/materials/MaterialPreviewDialog';
 import { QuizGeneratorDialog } from '@/components/materials/QuizGeneratorDialog';
+import { MultiQuizGeneratorDialog } from '@/components/materials/MultiQuizGeneratorDialog';
 
 const Materials = () => {
   const { language, dir } = useLanguage();
@@ -20,6 +21,11 @@ const Materials = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [quizMaterial, setQuizMaterial] = useState<Material | null>(null);
+  
+  // Multi-select state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
+  const [showMultiQuizDialog, setShowMultiQuizDialog] = useState(false);
 
   const t = {
     search: language === 'ar' ? 'بحث في الملفات...' : 'Search files...',
@@ -48,6 +54,8 @@ const Materials = () => {
 
   const handleDelete = (id: number, filePath: string) => {
     deleteMaterial(id, filePath);
+    // Also remove from selection if selected
+    setSelectedMaterials(prev => prev.filter(m => m.id !== id));
   };
 
   const handlePreview = (material: Material) => {
@@ -57,6 +65,37 @@ const Materials = () => {
   const handleGenerateQuiz = (material: Material) => {
     setQuizMaterial(material);
   };
+
+  // Multi-select handlers
+  const handleToggleSelect = useCallback((material: Material) => {
+    setSelectedMaterials(prev => {
+      const isSelected = prev.some(m => m.id === material.id);
+      if (isSelected) {
+        return prev.filter(m => m.id !== material.id);
+      } else {
+        return [...prev, material];
+      }
+    });
+  }, []);
+
+  const handleToggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => !prev);
+    if (selectionMode) {
+      // Clear selection when exiting selection mode
+      setSelectedMaterials([]);
+    }
+  }, [selectionMode]);
+
+  const handleGenerateCombinedQuiz = useCallback(() => {
+    if (selectedMaterials.length >= 2) {
+      setShowMultiQuizDialog(true);
+    }
+  }, [selectedMaterials]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedMaterials([]);
+    setSelectionMode(false);
+  }, []);
 
   if (loading) {
     return (
@@ -93,13 +132,18 @@ const Materials = () => {
           </div>
         )}
 
-        {/* Materials List */}
+        {/* Materials List with Selection Support */}
         <MaterialsBySubject
           materials={filteredMaterials}
           onDownload={handleDownload}
           onDelete={handleDelete}
           onGenerateQuiz={handleGenerateQuiz}
           onPreview={handlePreview}
+          selectionMode={selectionMode}
+          selectedMaterials={selectedMaterials}
+          onToggleSelect={handleToggleSelect}
+          onToggleSelectionMode={handleToggleSelectionMode}
+          onGenerateCombinedQuiz={handleGenerateCombinedQuiz}
         />
       </main>
 
@@ -112,11 +156,19 @@ const Materials = () => {
         onGenerateQuiz={handleGenerateQuiz}
       />
 
-      {/* Quiz Generator Dialog */}
+      {/* Single Quiz Generator Dialog */}
       <QuizGeneratorDialog
         material={quizMaterial}
         open={!!quizMaterial}
         onOpenChange={(open) => !open && setQuizMaterial(null)}
+      />
+
+      {/* Multi-Material Quiz Generator Dialog */}
+      <MultiQuizGeneratorDialog
+        materials={selectedMaterials}
+        open={showMultiQuizDialog}
+        onOpenChange={setShowMultiQuizDialog}
+        onClearSelection={handleClearSelection}
       />
     </div>
   );

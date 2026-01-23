@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   BookOpen, FileText, Image, Video, Music, File, 
-  FolderOpen, Grid3X3, List, ChevronDown, ChevronUp
+  FolderOpen, Grid3X3, List, ChevronDown, ChevronUp,
+  CheckSquare, Square, Layers, X
 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { MaterialCard } from './MaterialCard';
@@ -19,6 +20,11 @@ interface MaterialsBySubjectProps {
   onDelete: (id: number, filePath: string) => void;
   onGenerateQuiz: (material: Material) => void;
   onPreview: (material: Material) => void;
+  selectionMode: boolean;
+  selectedMaterials: Material[];
+  onToggleSelect: (material: Material) => void;
+  onToggleSelectionMode: () => void;
+  onGenerateCombinedQuiz: () => void;
 }
 
 export function MaterialsBySubject({ 
@@ -26,7 +32,12 @@ export function MaterialsBySubject({
   onDownload, 
   onDelete, 
   onGenerateQuiz,
-  onPreview 
+  onPreview,
+  selectionMode,
+  selectedMaterials,
+  onToggleSelect,
+  onToggleSelectionMode,
+  onGenerateCombinedQuiz
 }: MaterialsBySubjectProps) {
   const { language } = useLanguage();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -40,6 +51,11 @@ export function MaterialsBySubject({
     uploadFirst: language === 'ar' ? 'ارفع ملفاتك الدراسية للبدء' : 'Upload your study materials to get started',
     bySubject: language === 'ar' ? 'حسب المادة' : 'By Subject',
     byType: language === 'ar' ? 'حسب النوع' : 'By Type',
+    selectFiles: language === 'ar' ? 'تحديد الملفات' : 'Select Files',
+    cancelSelection: language === 'ar' ? 'إلغاء التحديد' : 'Cancel Selection',
+    selected: language === 'ar' ? 'محدد' : 'selected',
+    generateCombinedQuiz: language === 'ar' ? 'إنشاء اختبار شامل' : 'Generate Combined Quiz',
+    selectMultiple: language === 'ar' ? 'حدد عدة ملفات لإنشاء اختبار شامل' : 'Select multiple files to create a combined quiz',
   };
 
   const materialsBySubject = useMemo(() => {
@@ -93,6 +109,10 @@ export function MaterialsBySubject({
     });
   };
 
+  const isSelected = (material: Material) => {
+    return selectedMaterials.some(m => m.id === material.id);
+  };
+
   if (materials.length === 0) {
     return (
       <Card>
@@ -109,29 +129,81 @@ export function MaterialsBySubject({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* Header with Selection Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary" className="text-sm">
             {materials.length} {t.files}
           </Badge>
+          
+          {selectionMode && selectedMaterials.length > 0 && (
+            <Badge variant="default" className="text-sm bg-primary">
+              {selectedMaterials.length} {t.selected}
+            </Badge>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Selection Mode Toggle */}
           <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setViewMode('grid')}
+            variant={selectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleSelectionMode}
+            className="gap-2"
           >
-            <Grid3X3 className="h-4 w-4" />
+            {selectionMode ? (
+              <>
+                <X className="h-4 w-4" />
+                {t.cancelSelection}
+              </>
+            ) : (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                {t.selectFiles}
+              </>
+            )}
           </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
+
+          {/* Generate Combined Quiz Button */}
+          {selectionMode && selectedMaterials.length >= 2 && (
+            <Button
+              onClick={onGenerateCombinedQuiz}
+              className="gap-2 bg-gradient-to-r from-primary to-primary/80"
+            >
+              <Layers className="h-4 w-4" />
+              {t.generateCombinedQuiz}
+            </Button>
+          )}
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Selection Mode Hint */}
+      {selectionMode && selectedMaterials.length < 2 && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Layers className="h-5 w-5 text-primary" />
+          <p className="text-sm text-muted-foreground">{t.selectMultiple}</p>
+        </div>
+      )}
 
       <Tabs defaultValue="subject" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-sm">
@@ -187,6 +259,9 @@ export function MaterialsBySubject({
                         onDelete={onDelete}
                         onGenerateQuiz={onGenerateQuiz}
                         onPreview={onPreview}
+                        selectionMode={selectionMode}
+                        isSelected={isSelected(material)}
+                        onToggleSelect={onToggleSelect}
                       />
                     ))}
                   </div>
@@ -236,6 +311,9 @@ export function MaterialsBySubject({
                       onDelete={onDelete}
                       onGenerateQuiz={onGenerateQuiz}
                       onPreview={onPreview}
+                      selectionMode={selectionMode}
+                      isSelected={isSelected(material)}
+                      onToggleSelect={onToggleSelect}
                     />
                   ))}
                 </div>

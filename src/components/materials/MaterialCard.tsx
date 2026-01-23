@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +16,15 @@ import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
-interface MaterialCardProps {
+export interface MaterialCardProps {
   material: Material;
   onDownload: (material: Material) => void;
   onDelete: (id: number, filePath: string) => void;
   onGenerateQuiz: (material: Material) => void;
   onPreview: (material: Material) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (material: Material) => void;
 }
 
 const getFileIcon = (type: string) => {
@@ -49,7 +52,10 @@ export function MaterialCard({
   onDownload, 
   onDelete, 
   onGenerateQuiz,
-  onPreview 
+  onPreview,
+  selectionMode = false,
+  isSelected = false,
+  onToggleSelect
 }: MaterialCardProps) {
   const { language } = useLanguage();
   const Icon = getFileIcon(material.file_type);
@@ -63,11 +69,38 @@ export function MaterialCard({
     actions: language === 'ar' ? 'الإجراءات' : 'Actions',
   };
 
+  const handleCardClick = () => {
+    if (selectionMode && onToggleSelect) {
+      onToggleSelect(material);
+    }
+  };
+
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50 overflow-hidden">
+    <Card 
+      className={cn(
+        "group hover:shadow-lg transition-all duration-300 overflow-hidden",
+        selectionMode && "cursor-pointer",
+        isSelected 
+          ? "border-primary ring-2 ring-primary/20 bg-primary/5" 
+          : "hover:border-primary/50"
+      )}
+      onClick={handleCardClick}
+    >
       <CardContent className="p-0">
-        {/* Visual Header */}
-        <div className={cn('p-4 flex items-center justify-center', colorClass)}>
+        {/* Visual Header with Selection Checkbox */}
+        <div className={cn('p-4 flex items-center justify-center relative', colorClass)}>
+          {selectionMode && (
+            <div 
+              className="absolute top-2 left-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect?.(material)}
+                className="h-5 w-5 border-2 bg-background"
+              />
+            </div>
+          )}
           <Icon className="h-10 w-10" />
         </div>
         
@@ -86,38 +119,40 @@ export function MaterialCard({
               </p>
             </div>
             
-            {/* Actions Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onPreview(material)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  {t.preview}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDownload(material)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {t.download}
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => onGenerateQuiz(material)}
-                  className="text-primary"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {t.generateQuiz}
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => onDelete(material.id, material.file_path)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t.delete}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Actions Dropdown - Only show when not in selection mode */}
+            {!selectionMode && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onPreview(material)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    {t.preview}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDownload(material)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {t.download}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onGenerateQuiz(material)}
+                    className="text-primary"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {t.generateQuiz}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onDelete(material.id, material.file_path)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t.delete}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Subject Badge */}
@@ -128,27 +163,35 @@ export function MaterialCard({
             </Badge>
           )}
 
-          {/* Quick Actions */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => onPreview(material)}
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              {t.preview}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => onGenerateQuiz(material)}
-            >
-              <Sparkles className="h-3 w-3 mr-1" />
-              {t.generateQuiz}
-            </Button>
-          </div>
+          {/* Quick Actions - Only show when not in selection mode */}
+          {!selectionMode && (
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPreview(material);
+                }}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                {t.preview}
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onGenerateQuiz(material);
+                }}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                {t.generateQuiz}
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
