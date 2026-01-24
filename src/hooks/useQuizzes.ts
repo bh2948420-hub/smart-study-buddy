@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { celebrationService } from '@/services/celebrationService';
 
 export interface Quiz {
   id: number;
@@ -204,6 +205,11 @@ export const useQuizzes = () => {
         .single();
 
       if (error) throw error;
+
+      // Celebrate perfect score
+      if (percentage === 100) {
+        celebrationService.celebrate({ type: 'perfect_score' });
+      }
 
       toast({
         title: 'تم حفظ النتيجة',

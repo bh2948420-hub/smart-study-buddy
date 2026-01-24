@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { celebrationService } from '@/services/celebrationService';
 
 // XP rewards for different actions
 export const XP_REWARDS = {
@@ -46,8 +47,9 @@ export const useDataSync = () => {
       // Invalidate leaderboard cache
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
 
-      // Level up notification
+      // Level up celebration
       if (newLevel > oldLevel) {
+        celebrationService.celebrate({ type: 'level_up', level: newLevel });
         toast({
           title: '🎉 Level Up!',
           description: `You reached level ${newLevel}!`,

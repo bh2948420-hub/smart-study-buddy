@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { celebrationService } from '@/services/celebrationService';
 
 export interface Achievement {
   id: string;
@@ -106,6 +107,9 @@ export const useAchievements = () => {
       }
 
       if (newlyEarned.length > 0) {
+        // Trigger celebration for achievements
+        celebrationService.celebrate({ type: 'achievement' });
+        
         for (const achievement of newlyEarned) {
           toast({
             title: `${achievement.icon} ${language === 'ar' ? 'إنجاز جديد!' : 'New Achievement!'}`,

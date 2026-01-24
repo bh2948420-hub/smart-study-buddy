@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { celebrationService } from '@/services/celebrationService';
 
 export interface WeeklyChallenge {
   id: string;
@@ -130,6 +131,7 @@ export const useChallenges = () => {
       if (error) throw error;
 
       if (isCompleted) {
+        celebrationService.celebrate({ type: 'challenge_complete' });
         toast({
           title: '🎉 Challenge Completed!',
           description: `You earned ${challenge.xp_reward} XP!`,
