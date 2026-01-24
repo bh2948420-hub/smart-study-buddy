@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Medal, Award, Flame, BookOpen, Clock, Crown, TrendingUp, Users, Target, Zap, Star, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RankCelebration } from '@/components/celebrations/RankCelebration';
 
 export default function Leaderboard() {
   const { language, dir } = useLanguage();
@@ -213,7 +214,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-background" dir={dir}>
       <Navbar />
-      
+      <RankCelebration currentRank={actualUserRank} userId={currentUserId} />
       <main className="container py-8 space-y-8">
         {/* Header */}
         <div className="text-center">
