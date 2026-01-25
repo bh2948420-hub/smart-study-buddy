@@ -62,6 +62,14 @@ export const useDataSync = () => {
     }
   }, [queryClient, toast]);
 
+  // Streak milestones that trigger celebrations
+  const STREAK_MILESTONES = [7, 14, 30, 100];
+
+  // Check if streak is a milestone
+  const isStreakMilestone = useCallback((streak: number) => {
+    return STREAK_MILESTONES.includes(streak);
+  }, []);
+
   // Update streak and check for bonus
   const updateStreak = useCallback(async () => {
     try {
@@ -81,6 +89,7 @@ export const useDataSync = () => {
       const diffDays = Math.floor((today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
 
       let newStreak = profile.streak_days || 0;
+      const oldStreak = newStreak;
       
       if (diffDays === 0) {
         // Already updated today
@@ -102,11 +111,31 @@ export const useDataSync = () => {
         })
         .eq('user_id', user.id);
 
+      // Check for streak milestone celebration
+      if (isStreakMilestone(newStreak) && newStreak > oldStreak) {
+        celebrationService.celebrate({ type: 'streak_milestone', streakDays: newStreak });
+        
+        const milestoneMessages: Record<number, { title: string; desc: string }> = {
+          7: { title: '🔥 1 Week Streak!', desc: "You've studied for 7 days straight!" },
+          14: { title: '🔥🔥 2 Week Streak!', desc: "Two weeks of dedication! Amazing!" },
+          30: { title: '🏆 Monthly Master!', desc: "30 days of consistent study! You're on fire!" },
+          100: { title: '👑 LEGENDARY STREAK!', desc: "100 DAYS! You're absolutely unstoppable!" },
+        };
+        
+        const message = milestoneMessages[newStreak];
+        if (message) {
+          toast({
+            title: message.title,
+            description: message.desc,
+          });
+        }
+      }
+
       return { streak: newStreak, isNew: true };
     } catch (error) {
       console.error('Error updating streak:', error);
     }
-  }, [awardXP]);
+  }, [awardXP, isStreakMilestone, toast]);
 
   // Sync quiz completion with leaderboard
   const syncQuizResult = useCallback(async (score: number, totalQuestions: number, quizId: number) => {
