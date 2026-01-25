@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +20,11 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Sparkles, Loader2, Brain, Target, FileText, CheckCircle2, 
-  Layers, BookOpen, File, Eye, ArrowLeft, ArrowRight, ListChecks
+  Layers, BookOpen, File, Eye, ArrowLeft, ArrowRight, ListChecks,
+  X, Pencil, Check, Plus
 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -39,13 +41,20 @@ interface MultiQuizGeneratorDialogProps {
   onClearSelection: () => void;
 }
 
+interface TopicItem {
+  id: string;
+  text: string;
+  included: boolean;
+}
+
 interface ExtractedContent {
   materialId: number;
   fileName: string;
   subject: string | null;
   content: string;
-  topics: string[];
+  topics: TopicItem[];
   wordCount: number;
+  included: boolean;
 }
 
 type Step = 'configure' | 'preview' | 'generating';
@@ -57,9 +66,240 @@ const getFileIcon = (type: string) => {
   }
 };
 
+// Topic Editor Card Component
+interface TopicEditorCardProps {
+  extractedContent: ExtractedContent;
+  onToggleFile: (materialId: number) => void;
+  onToggleTopic: (materialId: number, topicId: string) => void;
+  onEditTopic: (materialId: number, topicId: string, newText: string) => void;
+  onRemoveTopic: (materialId: number, topicId: string) => void;
+  onAddTopic: (materialId: number, text: string) => void;
+  t: Record<string, string>;
+}
+
+function TopicEditorCard({ 
+  extractedContent: ec, 
+  onToggleFile, 
+  onToggleTopic, 
+  onEditTopic, 
+  onRemoveTopic,
+  onAddTopic,
+  t 
+}: TopicEditorCardProps) {
+  const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [showAddInput, setShowAddInput] = useState(false);
+  const [newTopicText, setNewTopicText] = useState('');
+
+  const handleStartEdit = (topicId: string, currentText: string) => {
+    setEditingTopicId(topicId);
+    setEditText(currentText);
+  };
+
+  const handleSaveEdit = (topicId: string) => {
+    if (editText.trim()) {
+      onEditTopic(ec.materialId, topicId, editText.trim());
+    }
+    setEditingTopicId(null);
+    setEditText('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTopicId(null);
+    setEditText('');
+  };
+
+  const handleAddNew = () => {
+    if (newTopicText.trim()) {
+      onAddTopic(ec.materialId, newTopicText.trim());
+      setNewTopicText('');
+      setShowAddInput(false);
+    }
+  };
+
+  return (
+    <Card className={cn(
+      "overflow-hidden transition-all",
+      !ec.included && "opacity-50"
+    )}>
+      <CardContent className="p-3 space-y-3">
+        {/* File Header with Toggle */}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={ec.included}
+            onCheckedChange={() => onToggleFile(ec.materialId)}
+            aria-label={ec.included ? t.excludeFile : t.includeFile}
+          />
+          <FileText className="h-4 w-4 text-primary shrink-0" />
+          <span className={cn(
+            "text-sm font-medium truncate flex-1",
+            !ec.included && "line-through"
+          )}>
+            {ec.fileName}
+          </span>
+          <Badge variant="outline" className="text-xs shrink-0">
+            {ec.wordCount.toLocaleString()} {t.words}
+          </Badge>
+        </div>
+        
+        {ec.subject && (
+          <Badge variant="secondary" className="text-xs">
+            {ec.subject}
+          </Badge>
+        )}
+        
+        {/* Topics Section */}
+        {ec.included && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <ListChecks className="h-3 w-3" />
+                {t.topicsFound}:
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setShowAddInput(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                {t.addTopic}
+              </Button>
+            </div>
+            
+            {/* Topic Items */}
+            {ec.topics.length > 0 ? (
+              <div className="space-y-1.5">
+                {ec.topics.map((topic) => (
+                  <div 
+                    key={topic.id}
+                    className={cn(
+                      "flex items-center gap-2 p-1.5 rounded-md bg-muted/50 group",
+                      !topic.included && "opacity-50"
+                    )}
+                  >
+                    <Checkbox
+                      checked={topic.included}
+                      onCheckedChange={() => onToggleTopic(ec.materialId, topic.id)}
+                      className="h-3.5 w-3.5"
+                    />
+                    
+                    {editingTopicId === topic.id ? (
+                      <div className="flex-1 flex items-center gap-1">
+                        <Input
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="h-6 text-xs"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(topic.id);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleSaveEdit(topic.id)}
+                        >
+                          <Check className="h-3 w-3 text-primary" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={handleCancelEdit}
+                        >
+                          <X className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={cn(
+                          "text-xs flex-1 truncate",
+                          !topic.included && "line-through"
+                        )}>
+                          {topic.text}
+                        </span>
+                        <div className="hidden group-hover:flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => handleStartEdit(topic.id, topic.text)}
+                            title={t.editTopic}
+                          >
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onRemoveTopic(ec.materialId, topic.id)}
+                            title={t.removeTopic}
+                          >
+                            <X className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                {t.noTopicsFound} - {t.usingMetadata}
+              </p>
+            )}
+
+            {/* Add New Topic Input */}
+            {showAddInput && (
+              <div className="flex items-center gap-1 mt-2">
+                <Input
+                  value={newTopicText}
+                  onChange={(e) => setNewTopicText(e.target.value)}
+                  placeholder={t.newTopic}
+                  className="h-7 text-xs"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddNew();
+                    if (e.key === 'Escape') {
+                      setShowAddInput(false);
+                      setNewTopicText('');
+                    }
+                  }}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={handleAddNew}
+                >
+                  <Check className="h-3.5 w-3.5 text-primary" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => {
+                    setShowAddInput(false);
+                    setNewTopicText('');
+                  }}
+                >
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // Extract key topics from content using simple NLP heuristics
-const extractTopics = (content: string, fileName: string): string[] => {
-  const topics: string[] = [];
+const extractTopics = (content: string, fileName: string): TopicItem[] => {
+  const topicTexts: string[] = [];
   
   // Look for chapter/section headers
   const headerPatterns = [
@@ -72,20 +312,25 @@ const extractTopics = (content: string, fileName: string): string[] => {
     const matches = content.matchAll(pattern);
     for (const match of matches) {
       if (match[1] && match[1].trim().length > 3) {
-        topics.push(match[1].trim().slice(0, 60));
+        topicTexts.push(match[1].trim().slice(0, 60));
       }
-      if (topics.length >= 5) break;
+      if (topicTexts.length >= 5) break;
     }
-    if (topics.length >= 5) break;
+    if (topicTexts.length >= 5) break;
   }
   
   // If no topics found, create generic ones from filename
-  if (topics.length === 0) {
+  if (topicTexts.length === 0) {
     const cleanName = fileName.replace(/\.(pdf|docx?|txt)$/i, '').replace(/[_-]/g, ' ');
-    topics.push(cleanName);
+    topicTexts.push(cleanName);
   }
   
-  return [...new Set(topics)].slice(0, 5);
+  // Convert to TopicItem with unique IDs
+  return [...new Set(topicTexts)].slice(0, 5).map((text, index) => ({
+    id: `topic-${Date.now()}-${index}`,
+    text,
+    included: true,
+  }));
 };
 
 export function MultiQuizGeneratorDialog({ 
@@ -152,6 +397,14 @@ export function MultiQuizGeneratorDialog({
       : 'Will use file metadata',
     next: language === 'ar' ? 'التالي' : 'Next',
     confirmGenerate: language === 'ar' ? 'تأكيد وإنشاء' : 'Confirm & Generate',
+    editTopic: language === 'ar' ? 'تعديل الموضوع' : 'Edit topic',
+    removeTopic: language === 'ar' ? 'إزالة الموضوع' : 'Remove topic',
+    addTopic: language === 'ar' ? 'إضافة موضوع' : 'Add topic',
+    newTopic: language === 'ar' ? 'موضوع جديد...' : 'New topic...',
+    excludeFile: language === 'ar' ? 'استبعاد الملف' : 'Exclude file',
+    includeFile: language === 'ar' ? 'تضمين الملف' : 'Include file',
+    includedTopics: language === 'ar' ? 'المواضيع المضمنة' : 'Included topics',
+    excludedTopics: language === 'ar' ? 'المواضيع المستبعدة' : 'Excluded topics',
   };
 
   // Get unique subjects from selected materials
@@ -233,6 +486,7 @@ export function MultiQuizGeneratorDialog({
           content,
           topics,
           wordCount,
+          included: true,
         });
       }
 
@@ -247,20 +501,80 @@ export function MultiQuizGeneratorDialog({
     }
   };
 
+  // Topic management handlers
+  const handleToggleFile = useCallback((materialId: number) => {
+    setExtractedContents(prev => prev.map(ec => 
+      ec.materialId === materialId ? { ...ec, included: !ec.included } : ec
+    ));
+  }, []);
+
+  const handleToggleTopic = useCallback((materialId: number, topicId: string) => {
+    setExtractedContents(prev => prev.map(ec => 
+      ec.materialId === materialId 
+        ? { 
+            ...ec, 
+            topics: ec.topics.map(t => 
+              t.id === topicId ? { ...t, included: !t.included } : t
+            )
+          } 
+        : ec
+    ));
+  }, []);
+
+  const handleEditTopic = useCallback((materialId: number, topicId: string, newText: string) => {
+    setExtractedContents(prev => prev.map(ec => 
+      ec.materialId === materialId 
+        ? { 
+            ...ec, 
+            topics: ec.topics.map(t => 
+              t.id === topicId ? { ...t, text: newText } : t
+            )
+          } 
+        : ec
+    ));
+  }, []);
+
+  const handleRemoveTopic = useCallback((materialId: number, topicId: string) => {
+    setExtractedContents(prev => prev.map(ec => 
+      ec.materialId === materialId 
+        ? { ...ec, topics: ec.topics.filter(t => t.id !== topicId) } 
+        : ec
+    ));
+  }, []);
+
+  const handleAddTopic = useCallback((materialId: number, text: string) => {
+    if (!text.trim()) return;
+    const newTopic: TopicItem = {
+      id: `topic-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text: text.trim(),
+      included: true,
+    };
+    setExtractedContents(prev => prev.map(ec => 
+      ec.materialId === materialId 
+        ? { ...ec, topics: [...ec.topics, newTopic] } 
+        : ec
+    ));
+  }, []);
+
   const handleGenerate = async () => {
-    if (extractedContents.length === 0) return;
+    const includedContents = extractedContents.filter(ec => ec.included);
+    if (includedContents.length === 0) return;
 
     try {
       setStep('generating');
       
-      // Combine all content
-      const contentParts = extractedContents.map(ec => 
-        `--- ${ec.fileName} (${ec.subject || 'General'}) ---\n${ec.content}`
-      );
+      // Combine content only from included files and topics
+      const contentParts = includedContents.map(ec => {
+        const includedTopics = ec.topics.filter(t => t.included).map(t => t.text);
+        const topicContext = includedTopics.length > 0 
+          ? `\nTopics to focus on: ${includedTopics.join(', ')}\n` 
+          : '';
+        return `--- ${ec.fileName} (${ec.subject || 'General'}) ---${topicContext}\n${ec.content}`;
+      });
       const combinedContent = contentParts.join('\n\n').slice(0, 20000);
       
       // Build quiz title
-      const quizTitle = title || (language === 'ar' 
+      const quizTitle = title || (language === 'ar'
         ? `اختبار شامل - ${materials.length} ملفات`
         : `Comprehensive Quiz - ${materials.length} files`);
       
@@ -311,8 +625,9 @@ export function MultiQuizGeneratorDialog({
     setTimeout(resetState, 200);
   };
 
-  const totalWords = extractedContents.reduce((sum, ec) => sum + ec.wordCount, 0);
-  const allTopics = extractedContents.flatMap(ec => ec.topics);
+  const includedContents = extractedContents.filter(ec => ec.included);
+  const totalWords = includedContents.reduce((sum, ec) => sum + ec.wordCount, 0);
+  const includedTopics = includedContents.flatMap(ec => ec.topics.filter(t => t.included));
   const isProcessing = extracting || generating;
 
   return (
@@ -470,7 +785,7 @@ export function MultiQuizGeneratorDialog({
                     <div className="flex-1">
                       <p className="font-medium text-sm">{t.readyToGenerate}</p>
                       <p className="text-xs text-muted-foreground">
-                        {t.totalContent}: {totalWords.toLocaleString()} {t.words} • {allTopics.length} {t.topicsFound.toLowerCase()}
+                        {t.totalContent}: {totalWords.toLocaleString()} {t.words} • {includedTopics.length} {t.includedTopics.toLowerCase()}
                       </p>
                     </div>
                   </div>
@@ -478,50 +793,19 @@ export function MultiQuizGeneratorDialog({
               </Card>
 
               {/* Extracted Content per File */}
-              <ScrollArea className="h-64">
+              <ScrollArea className="h-72">
                 <div className="space-y-3 pr-2">
-                  {extractedContents.map((ec, index) => (
-                    <Card key={ec.materialId} className="overflow-hidden">
-                      <CardContent className="p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-primary shrink-0" />
-                          <span className="text-sm font-medium truncate flex-1">{ec.fileName}</span>
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            {ec.wordCount.toLocaleString()} {t.words}
-                          </Badge>
-                        </div>
-                        
-                        {ec.subject && (
-                          <Badge variant="secondary" className="text-xs">
-                            {ec.subject}
-                          </Badge>
-                        )}
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <ListChecks className="h-3 w-3" />
-                            {t.topicsFound}:
-                          </div>
-                          {ec.topics.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {ec.topics.map((topic, i) => (
-                                <Badge 
-                                  key={i} 
-                                  variant="outline" 
-                                  className="text-xs bg-background"
-                                >
-                                  {topic}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground italic">
-                              {t.noTopicsFound} - {t.usingMetadata}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {extractedContents.map((ec) => (
+                    <TopicEditorCard
+                      key={ec.materialId}
+                      extractedContent={ec}
+                      onToggleFile={handleToggleFile}
+                      onToggleTopic={handleToggleTopic}
+                      onEditTopic={handleEditTopic}
+                      onRemoveTopic={handleRemoveTopic}
+                      onAddTopic={handleAddTopic}
+                      t={t}
+                    />
                   ))}
                 </div>
               </ScrollArea>
