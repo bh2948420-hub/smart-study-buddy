@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Sparkles, Loader2, Brain, Target, FileText, CheckCircle2, 
   Layers, BookOpen, File, Eye, ArrowLeft, ArrowRight, ListChecks,
-  X, Pencil, Check, Plus, GripVertical
+  X, Pencil, Check, Plus
 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -33,23 +33,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface MultiQuizGeneratorDialogProps {
   materials: Material[];
@@ -91,138 +74,7 @@ interface TopicEditorCardProps {
   onEditTopic: (materialId: number, topicId: string, newText: string) => void;
   onRemoveTopic: (materialId: number, topicId: string) => void;
   onAddTopic: (materialId: number, text: string) => void;
-  onReorderTopics: (materialId: number, oldIndex: number, newIndex: number) => void;
   t: Record<string, string>;
-}
-
-// Sortable Topic Item Component
-interface SortableTopicItemProps {
-  topic: TopicItem;
-  materialId: number;
-  editingTopicId: string | null;
-  editText: string;
-  onToggleTopic: (materialId: number, topicId: string) => void;
-  onStartEdit: (topicId: string, currentText: string) => void;
-  onSaveEdit: (topicId: string) => void;
-  onCancelEdit: () => void;
-  onSetEditText: (text: string) => void;
-  onRemoveTopic: (materialId: number, topicId: string) => void;
-  t: Record<string, string>;
-}
-
-function SortableTopicItem({
-  topic,
-  materialId,
-  editingTopicId,
-  editText,
-  onToggleTopic,
-  onStartEdit,
-  onSaveEdit,
-  onCancelEdit,
-  onSetEditText,
-  onRemoveTopic,
-  t,
-}: SortableTopicItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: topic.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "flex items-center gap-1.5 p-1.5 rounded-md bg-muted/50 group",
-        !topic.included && "opacity-50",
-        isDragging && "opacity-70 shadow-md bg-muted z-50"
-      )}
-    >
-      {/* Drag Handle */}
-      <button
-        className="cursor-grab active:cursor-grabbing touch-none p-0.5 hover:bg-muted rounded"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-3 w-3 text-muted-foreground" />
-      </button>
-
-      <Checkbox
-        checked={topic.included}
-        onCheckedChange={() => onToggleTopic(materialId, topic.id)}
-        className="h-3.5 w-3.5"
-      />
-      
-      {editingTopicId === topic.id ? (
-        <div className="flex-1 flex items-center gap-1">
-          <Input
-            value={editText}
-            onChange={(e) => onSetEditText(e.target.value)}
-            className="h-6 text-xs"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onSaveEdit(topic.id);
-              if (e.key === 'Escape') onCancelEdit();
-            }}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => onSaveEdit(topic.id)}
-          >
-            <Check className="h-3 w-3 text-primary" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={onCancelEdit}
-          >
-            <X className="h-3 w-3 text-destructive" />
-          </Button>
-        </div>
-      ) : (
-        <>
-          <span className={cn(
-            "text-xs flex-1 truncate",
-            !topic.included && "line-through"
-          )}>
-            {topic.text}
-          </span>
-          <div className="hidden group-hover:flex items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 w-5 p-0"
-              onClick={() => onStartEdit(topic.id, topic.text)}
-              title={t.editTopic}
-            >
-              <Pencil className="h-3 w-3 text-muted-foreground" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 w-5 p-0"
-              onClick={() => onRemoveTopic(materialId, topic.id)}
-              title={t.removeTopic}
-            >
-              <X className="h-3 w-3 text-destructive" />
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
-  );
 }
 
 function TopicEditorCard({ 
@@ -232,7 +84,6 @@ function TopicEditorCard({
   onEditTopic, 
   onRemoveTopic,
   onAddTopic,
-  onReorderTopics,
   t 
 }: TopicEditorCardProps) {
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
@@ -240,16 +91,6 @@ function TopicEditorCard({
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTopicText, setNewTopicText] = useState('');
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
   const handleStartEdit = (topicId: string, currentText: string) => {
     setEditingTopicId(topicId);
     setEditText(currentText);
@@ -273,15 +114,6 @@ function TopicEditorCard({
       onAddTopic(ec.materialId, newTopicText.trim());
       setNewTopicText('');
       setShowAddInput(false);
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = ec.topics.findIndex(t => t.id === active.id);
-      const newIndex = ec.topics.findIndex(t => t.id === over.id);
-      onReorderTopics(ec.materialId, oldIndex, newIndex);
     }
   };
 
@@ -335,37 +167,85 @@ function TopicEditorCard({
               </Button>
             </div>
             
-            {/* Topic Items with Drag & Drop */}
+            {/* Topic Items */}
             {ec.topics.length > 0 ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={ec.topics.map(t => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-1.5">
-                    {ec.topics.map((topic) => (
-                      <SortableTopicItem
-                        key={topic.id}
-                        topic={topic}
-                        materialId={ec.materialId}
-                        editingTopicId={editingTopicId}
-                        editText={editText}
-                        onToggleTopic={onToggleTopic}
-                        onStartEdit={handleStartEdit}
-                        onSaveEdit={handleSaveEdit}
-                        onCancelEdit={handleCancelEdit}
-                        onSetEditText={setEditText}
-                        onRemoveTopic={onRemoveTopic}
-                        t={t}
-                      />
-                    ))}
+              <div className="space-y-1.5">
+                {ec.topics.map((topic) => (
+                  <div 
+                    key={topic.id}
+                    className={cn(
+                      "flex items-center gap-2 p-1.5 rounded-md bg-muted/50 group",
+                      !topic.included && "opacity-50"
+                    )}
+                  >
+                    <Checkbox
+                      checked={topic.included}
+                      onCheckedChange={() => onToggleTopic(ec.materialId, topic.id)}
+                      className="h-3.5 w-3.5"
+                    />
+                    
+                    {editingTopicId === topic.id ? (
+                      <div className="flex-1 flex items-center gap-1">
+                        <Input
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="h-6 text-xs"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(topic.id);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleSaveEdit(topic.id)}
+                        >
+                          <Check className="h-3 w-3 text-primary" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={handleCancelEdit}
+                        >
+                          <X className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={cn(
+                          "text-xs flex-1 truncate",
+                          !topic.included && "line-through"
+                        )}>
+                          {topic.text}
+                        </span>
+                        <div className="hidden group-hover:flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => handleStartEdit(topic.id, topic.text)}
+                            title={t.editTopic}
+                          >
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onRemoveTopic(ec.materialId, topic.id)}
+                            title={t.removeTopic}
+                          >
+                            <X className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </SortableContext>
-              </DndContext>
+                ))}
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground italic">
                 {t.noTopicsFound} - {t.usingMetadata}
@@ -525,7 +405,6 @@ export function MultiQuizGeneratorDialog({
     includeFile: language === 'ar' ? 'تضمين الملف' : 'Include file',
     includedTopics: language === 'ar' ? 'المواضيع المضمنة' : 'Included topics',
     excludedTopics: language === 'ar' ? 'المواضيع المستبعدة' : 'Excluded topics',
-    dragToReorder: language === 'ar' ? 'اسحب لإعادة الترتيب' : 'Drag to reorder',
   };
 
   // Get unique subjects from selected materials
@@ -673,14 +552,6 @@ export function MultiQuizGeneratorDialog({
     setExtractedContents(prev => prev.map(ec => 
       ec.materialId === materialId 
         ? { ...ec, topics: [...ec.topics, newTopic] } 
-        : ec
-    ));
-  }, []);
-
-  const handleReorderTopics = useCallback((materialId: number, oldIndex: number, newIndex: number) => {
-    setExtractedContents(prev => prev.map(ec => 
-      ec.materialId === materialId 
-        ? { ...ec, topics: arrayMove(ec.topics, oldIndex, newIndex) } 
         : ec
     ));
   }, []);
@@ -933,7 +804,6 @@ export function MultiQuizGeneratorDialog({
                       onEditTopic={handleEditTopic}
                       onRemoveTopic={handleRemoveTopic}
                       onAddTopic={handleAddTopic}
-                      onReorderTopics={handleReorderTopics}
                       t={t}
                     />
                   ))}
