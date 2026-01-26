@@ -98,18 +98,19 @@ export const useDataSync = () => {
         // Consecutive day
         newStreak += 1;
         await awardXP(XP_REWARDS.STREAK_BONUS * newStreak, 'Streak bonus');
+        
+        await supabase
+          .from('user_profiles')
+          .update({
+            streak_days: newStreak,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
       } else {
-        // Streak broken
-        newStreak = 1;
+        // Streak broken - don't reset here, let the recovery dialog handle it
+        // The useStreakRecovery hook will show the recovery option
+        return { streak: newStreak, isNew: false, broken: true };
       }
-
-      await supabase
-        .from('user_profiles')
-        .update({
-          streak_days: newStreak,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
 
       // Check for streak milestone celebration
       if (isStreakMilestone(newStreak) && newStreak > oldStreak) {
