@@ -91,6 +91,15 @@ export const useStreakRecovery = () => {
 
       if (error) throw error;
 
+      // Record the recovery in history
+      await supabase
+        .from('streak_recoveries')
+        .insert({
+          user_id: user.id,
+          recovered_streak: state.previousStreak,
+          xp_spent: cost,
+        });
+
       // Celebrate the recovery!
       celebrationService.celebrate({ type: 'streak_milestone', streakDays: state.previousStreak });
 
@@ -103,6 +112,7 @@ export const useStreakRecovery = () => {
       setState(prev => ({ ...prev, showRecoveryDialog: false }));
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['streak-recoveries'] });
 
     } catch (error) {
       console.error('Error recovering streak:', error);

@@ -335,6 +335,30 @@ export type Database = {
           },
         ]
       }
+      streak_recoveries: {
+        Row: {
+          id: string
+          recovered_at: string
+          recovered_streak: number
+          user_id: string
+          xp_spent: number
+        }
+        Insert: {
+          id?: string
+          recovered_at?: string
+          recovered_streak: number
+          user_id: string
+          xp_spent: number
+        }
+        Update: {
+          id?: string
+          recovered_at?: string
+          recovered_streak?: number
+          user_id?: string
+          xp_spent?: number
+        }
+        Relationships: []
+      }
       study_insights: {
         Row: {
           average_quiz_score: number | null
