@@ -13,6 +13,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useStats } from '@/hooks/useStats';
 import { AchievementsList } from '@/components/achievements/AchievementsList';
+import { StreakRecoveryHistory } from '@/components/streak/StreakRecoveryHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Settings, Award, Target, Clock, Flame, Save, Loader2, BookOpen, Trophy, BarChart3 } from 'lucide-react';
 
@@ -276,72 +277,77 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="statistics">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'إجمالي الدراسة' : 'Total Study'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-primary">{stats.totalStudyHours}h</div>
-                  <p className="text-sm text-muted-foreground">{stats.totalStudyMinutes} {language === 'ar' ? 'دقيقة' : 'minutes'}</p>
-                </CardContent>
-              </Card>
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'إجمالي الدراسة' : 'Total Study'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{stats.totalStudyHours}h</div>
+                    <p className="text-sm text-muted-foreground">{stats.totalStudyMinutes} {language === 'ar' ? 'دقيقة' : 'minutes'}</p>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'دراسة اليوم' : "Today's Study"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-500">{Math.round(stats.todayStudyMinutes / 60 * 10) / 10}h</div>
-                  <Progress 
-                    value={Math.min(100, (stats.todayStudyMinutes / (profile?.study_goal_minutes || 120)) * 100)} 
-                    className="mt-2 h-2" 
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {stats.todayStudyMinutes}/{profile?.study_goal_minutes || 120} {language === 'ar' ? 'دقيقة' : 'min'}
-                  </p>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'دراسة اليوم' : "Today's Study"}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{Math.round(stats.todayStudyMinutes / 60 * 10) / 10}h</div>
+                    <Progress 
+                      value={Math.min(100, (stats.todayStudyMinutes / (profile?.study_goal_minutes || 120)) * 100)} 
+                      className="mt-2 h-2" 
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {stats.todayStudyMinutes}/{profile?.study_goal_minutes || 120} {language === 'ar' ? 'دقيقة' : 'min'}
+                    </p>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'هذا الأسبوع' : 'This Week'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-500">{Math.round(stats.weeklyStudyMinutes / 60 * 10) / 10}h</div>
-                  <p className="text-sm text-muted-foreground">{stats.totalSessions} {language === 'ar' ? 'جلسة' : 'sessions'}</p>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'هذا الأسبوع' : 'This Week'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{Math.round(stats.weeklyStudyMinutes / 60 * 10) / 10}h</div>
+                    <p className="text-sm text-muted-foreground">{stats.totalSessions} {language === 'ar' ? 'جلسة' : 'sessions'}</p>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'الاختبارات المكتملة' : 'Quizzes Completed'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-purple-500">{stats.completedQuizzes}</div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'الاختبارات المكتملة' : 'Quizzes Completed'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{stats.completedQuizzes}</div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'متوسط الدرجات' : 'Average Score'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-yellow-500">{stats.averageScore}%</div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'متوسط الدرجات' : 'Average Score'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{stats.averageScore}%</div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{language === 'ar' ? 'نقاط الخبرة' : 'XP Points'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-orange-500">{profile?.xp_points || 0}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? `المستوى ${profile?.level || 1}` : `Level ${profile?.level || 1}`}
-                  </p>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{language === 'ar' ? 'نقاط الخبرة' : 'XP Points'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{profile?.xp_points || 0}</div>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ar' ? `المستوى ${profile?.level || 1}` : `Level ${profile?.level || 1}`}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Streak Recovery History */}
+              <StreakRecoveryHistory />
             </div>
           </TabsContent>
         </Tabs>
