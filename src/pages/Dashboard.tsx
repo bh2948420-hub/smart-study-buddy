@@ -9,6 +9,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { useStudySessions } from '@/hooks/useStudySessions';
 import { useStats } from '@/hooks/useStats';
 import { useDataSync } from '@/hooks/useDataSync';
+import { useStreakRecovery } from '@/hooks/useStreakRecovery';
 import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
 import { PomodoroTimer } from '@/components/study/PomodoroTimer';
 import { StatsCards } from '@/components/dashboard/StatsCards';
@@ -16,6 +17,7 @@ import { DailyQuizWidget } from '@/components/dashboard/DailyQuizWidget';
 import { WeeklyChallenges } from '@/components/challenges/WeeklyChallenges';
 import { RecentQuizResults } from '@/components/dashboard/RecentQuizResults';
 import { FocusSessionSummary } from '@/components/dashboard/FocusSessionSummary';
+import { StreakRecoveryDialog } from '@/components/streak/StreakRecoveryDialog';
 import {
   CalendarDays,
   List,
@@ -43,6 +45,14 @@ const Dashboard = () => {
   const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
   const { stats } = useStats();
   const { syncTaskComplete, syncFocusSession } = useDataSync();
+  const {
+    showRecoveryDialog,
+    previousStreak,
+    currentXP,
+    recoverStreak,
+    declineRecovery,
+    closeDialog,
+  } = useStreakRecovery();
 
   const todayStats = getTodayStats();
   const completedTasks = tasks.filter(t => t.completed).length;
@@ -128,6 +138,16 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background" dir={dir}>
       <Navbar />
+
+      {/* Streak Recovery Dialog */}
+      <StreakRecoveryDialog
+        open={showRecoveryDialog}
+        onOpenChange={closeDialog}
+        previousStreak={previousStreak}
+        currentXP={currentXP}
+        onRecover={recoverStreak}
+        onDecline={declineRecovery}
+      />
 
       <main className="container py-8 space-y-6">
         {/* Welcome Section */}
