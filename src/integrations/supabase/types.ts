@@ -335,6 +335,30 @@ export type Database = {
           },
         ]
       }
+      streak_freeze_history: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          user_id: string
+          xp_spent: number | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+          xp_spent?: number | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          xp_spent?: number | null
+        }
+        Relationships: []
+      }
       streak_recoveries: {
         Row: {
           id: string
@@ -607,6 +631,7 @@ export type Database = {
           reminder_enabled: boolean | null
           reminder_time: string | null
           streak_days: number | null
+          streak_freezes: number
           study_goal_minutes: number | null
           updated_at: string
           user_id: string
@@ -625,6 +650,7 @@ export type Database = {
           reminder_enabled?: boolean | null
           reminder_time?: string | null
           streak_days?: number | null
+          streak_freezes?: number
           study_goal_minutes?: number | null
           updated_at?: string
           user_id: string
@@ -643,6 +669,7 @@ export type Database = {
           reminder_enabled?: boolean | null
           reminder_time?: string | null
           streak_days?: number | null
+          streak_freezes?: number
           study_goal_minutes?: number | null
           updated_at?: string
           user_id?: string

@@ -15,6 +15,7 @@ import { useStats } from '@/hooks/useStats';
 import { AchievementsList } from '@/components/achievements/AchievementsList';
 import { StreakRecoveryHistory } from '@/components/streak/StreakRecoveryHistory';
 import { StreakBadges } from '@/components/streak/StreakBadges';
+import { StreakFreezeShop } from '@/components/streak/StreakFreezeShop';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Settings, Award, Target, Clock, Flame, Save, Loader2, BookOpen, Trophy, BarChart3 } from 'lucide-react';
 
@@ -282,6 +283,9 @@ const Profile = () => {
 
           <TabsContent value="statistics">
             <div className="space-y-6">
+              {/* Streak Freeze Shop */}
+              <StreakFreezeShop />
+              
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader>

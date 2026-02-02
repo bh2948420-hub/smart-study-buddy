@@ -10,6 +10,7 @@ interface StreakRecoveryState {
   previousStreak: number;
   currentXP: number;
   isChecking: boolean;
+  freezeUsed: boolean;
 }
 
 export const useStreakRecovery = () => {
@@ -21,7 +22,54 @@ export const useStreakRecovery = () => {
     previousStreak: 0,
     currentXP: 0,
     isChecking: true,
+    freezeUsed: false,
   });
+
+  // Try to use a streak freeze to protect the streak
+  const useStreakFreeze = useCallback(async (userId: string, streakDays: number): Promise<boolean> => {
+    try {
+      // Get current freeze count
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('streak_freezes')
+        .eq('user_id', userId)
+        .single();
+
+      if (!profile || (profile.streak_freezes || 0) < 1) {
+        return false;
+      }
+
+      // Use the freeze
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          streak_freezes: (profile.streak_freezes || 0) - 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Record the usage
+      await supabase
+        .from('streak_freeze_history')
+        .insert({
+          user_id: userId,
+          action_type: 'used',
+          xp_spent: 0,
+        });
+
+      toast({
+        title: '❄️ Streak Freeze Used!',
+        description: `Your ${streakDays}-day streak has been protected!`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error using streak freeze:', error);
+      return false;
+    }
+  }, [toast]);
 
   // Check if streak is broken and offer recovery
   const checkStreakStatus = useCallback(async () => {
@@ -34,7 +82,7 @@ export const useStreakRecovery = () => {
 
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('streak_days, xp_points, updated_at')
+        .select('streak_days, xp_points, streak_freezes, updated_at')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -51,11 +99,25 @@ export const useStreakRecovery = () => {
       const streakIsBroken = diffDays > 1 && (profile.streak_days || 0) > 1;
 
       if (streakIsBroken) {
+        // Try to auto-use a freeze first
+        const hasFreezes = (profile.streak_freezes || 0) > 0;
+        
+        if (hasFreezes) {
+          const freezeUsed = await useStreakFreeze(user.id, profile.streak_days || 0);
+          if (freezeUsed) {
+            setState(prev => ({ ...prev, isChecking: false, freezeUsed: true }));
+            queryClient.invalidateQueries({ queryKey: ['stats'] });
+            return;
+          }
+        }
+
+        // No freeze available, show recovery dialog
         setState({
           showRecoveryDialog: true,
           previousStreak: profile.streak_days || 0,
           currentXP: profile.xp_points || 0,
           isChecking: false,
+          freezeUsed: false,
         });
       } else {
         setState(prev => ({ ...prev, isChecking: false }));
@@ -64,7 +126,7 @@ export const useStreakRecovery = () => {
       console.error('Error checking streak status:', error);
       setState(prev => ({ ...prev, isChecking: false }));
     }
-  }, []);
+  }, [useStreakFreeze, queryClient]);
 
   // Recover the streak by spending XP
   const recoverStreak = useCallback(async () => {
