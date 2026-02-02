@@ -14,6 +14,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useStats } from '@/hooks/useStats';
 import { AchievementsList } from '@/components/achievements/AchievementsList';
 import { StreakRecoveryHistory } from '@/components/streak/StreakRecoveryHistory';
+import { StreakBadges } from '@/components/streak/StreakBadges';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Settings, Award, Target, Clock, Flame, Save, Loader2, BookOpen, Trophy, BarChart3 } from 'lucide-react';
 
@@ -273,7 +274,10 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="achievements">
-            <AchievementsList />
+            <div className="space-y-6">
+              <StreakBadges />
+              <AchievementsList />
+            </div>
           </TabsContent>
 
           <TabsContent value="statistics">
