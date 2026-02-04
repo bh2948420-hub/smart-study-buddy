@@ -137,9 +137,9 @@ export default function Leaderboard() {
 
   // Streak badge helper
   const getStreakBadges = (streakDays: number) => {
-    const badges: { icon: string; label: string; color: string }[] = [];
+    const badges: { icon: string; label: string; color: string; animate?: boolean }[] = [];
     if (streakDays >= 100) {
-      badges.push({ icon: '🔥', label: '100', color: 'bg-gradient-to-r from-red-500 to-orange-500 text-white' });
+      badges.push({ icon: '🔥', label: '100', color: 'bg-gradient-to-r from-red-500 to-orange-500 text-white', animate: true });
     } else if (streakDays >= 30) {
       badges.push({ icon: '⚡', label: '30', color: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' });
     } else if (streakDays >= 7) {
@@ -159,7 +159,8 @@ export default function Leaderboard() {
             key={idx}
             className={cn(
               'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold',
-              badge.color
+              badge.color,
+              badge.animate && 'animate-pulse'
             )}
             title={`${badge.label} ${language === 'ar' ? 'يوم سلسلة' : 'day streak'}`}
           >
