@@ -13,10 +13,11 @@ export interface LeaderboardEntry {
 }
 
 export type TimeFilter = 'all' | 'weekly' | 'monthly';
+export type SortBy = 'xp' | 'streak';
 
-export function useLeaderboard(timeFilter: TimeFilter = 'all') {
+export function useLeaderboard(timeFilter: TimeFilter = 'all', sortBy: SortBy = 'xp') {
   return useQuery({
-    queryKey: ['leaderboard', timeFilter],
+    queryKey: ['leaderboard', timeFilter, sortBy],
     queryFn: async (): Promise<LeaderboardEntry[]> => {
       const { data, error } = await supabase.rpc('get_leaderboard', {
         time_filter: timeFilter,
@@ -28,7 +29,7 @@ export function useLeaderboard(timeFilter: TimeFilter = 'all') {
         throw error;
       }
 
-      return (data || []).map((entry: any) => ({
+      let entries = (data || []).map((entry: any) => ({
         rank: Number(entry.rank),
         display_name: entry.display_name || 'Student',
         avatar_url: entry.avatar_url,
@@ -38,6 +39,18 @@ export function useLeaderboard(timeFilter: TimeFilter = 'all') {
         quizzes_completed: Number(entry.quizzes_completed) || 0,
         study_hours: Number(entry.study_hours) || 0,
       }));
+
+      // Re-sort by streak if needed
+      if (sortBy === 'streak') {
+        entries = entries.sort((a, b) => b.streak_days - a.streak_days);
+        // Reassign ranks based on streak order
+        entries = entries.map((entry, index) => ({
+          ...entry,
+          rank: index + 1,
+        }));
+      }
+
+      return entries;
     },
   });
 }
