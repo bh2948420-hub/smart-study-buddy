@@ -135,6 +135,42 @@ export default function Leaderboard() {
   const xpForCurrentLevel = xpForLevel(currentLevel);
   const xpProgress = Math.min((currentXP % xpForCurrentLevel) / xpForCurrentLevel * 100, 100);
 
+  // Streak badge helper
+  const getStreakBadges = (streakDays: number) => {
+    const badges: { icon: string; label: string; color: string }[] = [];
+    if (streakDays >= 100) {
+      badges.push({ icon: '🔥', label: '100', color: 'bg-gradient-to-r from-red-500 to-orange-500 text-white' });
+    } else if (streakDays >= 30) {
+      badges.push({ icon: '⚡', label: '30', color: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' });
+    } else if (streakDays >= 7) {
+      badges.push({ icon: '✨', label: '7', color: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' });
+    }
+    return badges;
+  };
+
+  const StreakBadgeDisplay = ({ streakDays }: { streakDays: number }) => {
+    const badges = getStreakBadges(streakDays);
+    if (badges.length === 0) return null;
+    
+    return (
+      <div className="flex gap-1">
+        {badges.map((badge, idx) => (
+          <span
+            key={idx}
+            className={cn(
+              'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold',
+              badge.color
+            )}
+            title={`${badge.label} ${language === 'ar' ? 'يوم سلسلة' : 'day streak'}`}
+          >
+            {badge.icon}{badge.label}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+
   const TopThreeCard = ({ entry, position }: { entry: LeaderboardEntry; position: number }) => {
     const sizes = {
       1: 'h-24 w-24',
@@ -189,7 +225,10 @@ export default function Leaderboard() {
             </div>
           </div>
           <div className="text-center">
-            <h3 className="font-semibold text-lg">{entry.display_name}</h3>
+            <div className="flex items-center justify-center gap-2">
+              <h3 className="font-semibold text-lg">{entry.display_name}</h3>
+              <StreakBadgeDisplay streakDays={entry.streak_days} />
+            </div>
             <p className="text-muted-foreground text-sm">{t.level} {entry.level}</p>
           </div>
           <div className="flex items-center gap-1 text-primary font-bold text-xl">
@@ -459,6 +498,7 @@ export default function Leaderboard() {
                                   {t.you}
                                 </Badge>
                               )}
+                              <StreakBadgeDisplay streakDays={entry.streak_days} />
                             </div>
                             <p className={cn('text-sm', entry.rank <= 3 ? 'opacity-80' : 'text-muted-foreground')}>
                               {t.level} {entry.level}
