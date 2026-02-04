@@ -139,7 +139,7 @@ export default function Leaderboard() {
   const getStreakBadges = (streakDays: number) => {
     const badges: { icon: string; label: string; color: string; animate?: boolean }[] = [];
     if (streakDays >= 100) {
-      badges.push({ icon: '🔥', label: '100', color: 'bg-gradient-to-r from-red-500 to-orange-500 text-white', animate: true });
+      badges.push({ icon: '🔥', label: '100', color: 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.7)]', animate: true });
     } else if (streakDays >= 30) {
       badges.push({ icon: '⚡', label: '30', color: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' });
     } else if (streakDays >= 7) {
