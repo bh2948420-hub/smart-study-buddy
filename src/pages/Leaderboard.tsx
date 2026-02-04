@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useLeaderboard, TimeFilter, LeaderboardEntry } from '@/hooks/useLeaderboard';
+import { useLeaderboard, TimeFilter, SortBy, LeaderboardEntry } from '@/hooks/useLeaderboard';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +17,8 @@ export default function Leaderboard() {
   const { language, dir } = useLanguage();
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('weekly');
-  const { data: leaderboard, isLoading, error } = useLeaderboard(timeFilter);
+  const [sortBy, setSortBy] = useState<SortBy>('xp');
+  const { data: leaderboard, isLoading, error } = useLeaderboard(timeFilter, sortBy);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -57,6 +58,9 @@ export default function Leaderboard() {
     progressToNextLevel: language === 'ar' ? 'التقدم للمستوى التالي' : 'Progress to Next Level',
     days: language === 'ar' ? 'يوم' : 'days',
     hours: language === 'ar' ? 'ساعة' : 'h',
+    sortBy: language === 'ar' ? 'ترتيب حسب' : 'Sort by',
+    sortByXP: language === 'ar' ? 'النقاط' : 'XP',
+    sortByStreak: language === 'ar' ? 'السلسلة' : 'Streak',
     completed: language === 'ar' ? 'مكتمل' : 'completed',
   };
 
@@ -225,13 +229,28 @@ export default function Leaderboard() {
           <p className="text-muted-foreground">{t.subtitle}</p>
         </div>
 
-        {/* Time Filter */}
-        <div className="flex justify-center">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          {/* Time Filter */}
           <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
             <TabsList className="grid grid-cols-3 w-[300px]">
               <TabsTrigger value="weekly">{t.weekly}</TabsTrigger>
               <TabsTrigger value="monthly">{t.monthly}</TabsTrigger>
               <TabsTrigger value="all">{t.all}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Sort Filter */}
+          <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+            <TabsList className="grid grid-cols-2 w-[200px]">
+              <TabsTrigger value="xp" className="gap-1">
+                <Trophy className="h-4 w-4" />
+                {t.sortByXP}
+              </TabsTrigger>
+              <TabsTrigger value="streak" className="gap-1">
+                <Flame className="h-4 w-4" />
+                {t.sortByStreak}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
