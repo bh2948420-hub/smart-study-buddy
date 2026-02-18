@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Trophy, Medal, Award, Flame, BookOpen, Clock, Crown, TrendingUp, Users, Target, Zap, Star, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RankCelebration } from '@/components/celebrations/RankCelebration';
+import { StreakProgressChart } from '@/components/leaderboard/StreakProgressChart';
 
 export default function Leaderboard() {
   const { language, dir } = useLanguage();
@@ -433,6 +434,9 @@ export default function Leaderboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Streak Progress Chart */}
+        {!isLoading && <StreakProgressChart />}
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
