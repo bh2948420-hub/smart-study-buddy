@@ -18,6 +18,7 @@ import { WeeklyChallenges } from '@/components/challenges/WeeklyChallenges';
 import { RecentQuizResults } from '@/components/dashboard/RecentQuizResults';
 import { FocusSessionSummary } from '@/components/dashboard/FocusSessionSummary';
 import { StreakRecoveryDialog } from '@/components/streak/StreakRecoveryDialog';
+import { StreakWinnersPanel } from '@/components/dashboard/StreakWinnersPanel';
 import {
   CalendarDays,
   List,
@@ -232,6 +233,9 @@ const Dashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Streak Winners */}
+            <StreakWinnersPanel />
+
             {/* Focus Session Summary - Links to Focus Mode */}
             <FocusSessionSummary />
 
