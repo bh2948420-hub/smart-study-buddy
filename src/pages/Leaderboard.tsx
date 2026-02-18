@@ -62,6 +62,10 @@ export default function Leaderboard() {
     sortByXP: language === 'ar' ? 'النقاط' : 'XP',
     sortByStreak: language === 'ar' ? 'السلسلة' : 'Streak',
     completed: language === 'ar' ? 'مكتمل' : 'completed',
+    streakChampions: language === 'ar' ? 'أبطال الالتزام' : 'Streak Champions',
+    streakTier100: language === 'ar' ? 'أسطورة' : 'Legend',
+    streakTier30: language === 'ar' ? 'محترف' : 'Pro',
+    streakTier7: language === 'ar' ? 'مبتدئ' : 'Rising',
   };
 
   useEffect(() => {
@@ -455,134 +459,206 @@ export default function Leaderboard() {
               </div>
             )}
 
-            {/* Full Leaderboard Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {t.topStudents}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {leaderboard.map((entry) => {
-                    const isCurrentUser = userProfile?.display_name === entry.display_name;
-                    const xpPerHour = entry.study_hours > 0 ? Math.round(entry.xp_points / entry.study_hours) : 0;
-                    const quizAvg = entry.quizzes_completed > 0 ? Math.round(entry.xp_points / entry.quizzes_completed) : 0;
-                    
-                    return (
-                      <div
-                        key={entry.rank}
-                        className={cn(
-                          'group relative rounded-lg transition-all duration-300',
-                          entry.rank <= 3 ? getRankBadgeClass(entry.rank) : 'bg-muted/50 hover:bg-muted',
-                          isCurrentUser && entry.rank > 3 && 'ring-2 ring-primary bg-primary/5',
-                          'hover:shadow-lg hover:scale-[1.01]'
-                        )}
-                      >
-                        <div className="flex items-center gap-4 p-4">
-                          {/* Rank */}
-                          <div className="w-12 flex justify-center">
-                            {getRankIcon(entry.rank)}
-                          </div>
+            {/* Streak-focused view when sorting by streak */}
+            {sortBy === 'streak' ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    {t.streakChampions}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {leaderboard.map((entry) => {
+                      const isCurrentUser = userProfile?.display_name === entry.display_name;
+                      const streakTier = entry.streak_days >= 100 ? 'legend' : entry.streak_days >= 30 ? 'pro' : entry.streak_days >= 7 ? 'rising' : 'none';
+                      const tierLabel = streakTier === 'legend' ? t.streakTier100 : streakTier === 'pro' ? t.streakTier30 : streakTier === 'rising' ? t.streakTier7 : '';
+                      const tierColors = {
+                        legend: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-500/10 to-orange-500/5',
+                        pro: 'border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-500/10 to-pink-500/5',
+                        rising: 'border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-500/10 to-cyan-500/5',
+                        none: 'border-l-4 border-l-muted bg-muted/30',
+                      };
 
-                          {/* Avatar & Name */}
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <Avatar className="h-10 w-10 transition-transform duration-300 group-hover:scale-110">
+                      return (
+                        <div
+                          key={entry.rank}
+                          className={cn(
+                            'group rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01]',
+                            tierColors[streakTier],
+                            isCurrentUser && 'ring-2 ring-primary'
+                          )}
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Rank */}
+                            <div className="w-10 text-center">
+                              <span className="text-lg font-bold text-muted-foreground">#{entry.rank}</span>
+                            </div>
+
+                            {/* Avatar */}
+                            <Avatar className="h-11 w-11 transition-transform duration-300 group-hover:scale-110">
                               <AvatarImage src={entry.avatar_url || undefined} />
-                              <AvatarFallback>
-                                {entry.display_name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
+                              <AvatarFallback>{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className={cn('font-medium truncate', entry.rank <= 3 && 'text-inherit')}>
-                                  {entry.display_name}
-                                </p>
+
+                            {/* Name + tier badge */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium truncate">{entry.display_name}</p>
                                 {isCurrentUser && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {t.you}
-                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs">{t.you}</Badge>
                                 )}
-                                <StreakBadgeDisplay streakDays={entry.streak_days} />
+                                {tierLabel && (
+                                  <span className={cn(
+                                    'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold',
+                                    streakTier === 'legend' && 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.6)] animate-pulse',
+                                    streakTier === 'pro' && 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+                                    streakTier === 'rising' && 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
+                                  )}>
+                                    {streakTier === 'legend' ? '🔥' : streakTier === 'pro' ? '⚡' : '✨'} {tierLabel}
+                                  </span>
+                                )}
                               </div>
-                              <p className={cn('text-sm', entry.rank <= 3 ? 'opacity-80' : 'text-muted-foreground')}>
-                                {t.level} {entry.level}
-                              </p>
+                              <p className="text-sm text-muted-foreground">{t.level} {entry.level}</p>
                             </div>
-                          </div>
 
-                          {/* Stats */}
-                          <div className="hidden sm:flex items-center gap-6">
-                            <div className="text-center">
-                              <div className="flex items-center gap-1">
-                                <Flame className="h-4 w-4 text-orange-500" />
-                                <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.streak_days}</span>
-                              </div>
-                              <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.streak}</p>
+                            {/* Streak count - bold and prominent */}
+                            <div className={cn(
+                              'flex flex-col items-center justify-center min-w-[80px] py-2 px-3 rounded-xl',
+                              streakTier === 'legend' && 'bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-[0_0_16px_rgba(239,68,68,0.5)]',
+                              streakTier === 'pro' && 'bg-gradient-to-br from-purple-500 to-pink-500 text-white',
+                              streakTier === 'rising' && 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white',
+                              streakTier === 'none' && 'bg-muted text-muted-foreground',
+                            )}>
+                              <Flame className={cn('h-5 w-5 mb-0.5', streakTier === 'none' && 'text-muted-foreground')} />
+                              <span className="text-xl font-extrabold leading-none">{entry.streak_days}</span>
+                              <span className="text-[10px] opacity-80">{t.days}</span>
                             </div>
-                            <div className="text-center">
-                              <div className="flex items-center gap-1">
-                                <BookOpen className="h-4 w-4 text-blue-500" />
-                                <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.quizzes_completed}</span>
-                              </div>
-                              <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.quizzes}</p>
-                            </div>
-                            <div className="text-center">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-green-500" />
-                                <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.study_hours}{t.hours}</span>
-                              </div>
-                              <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.studyHours}</p>
-                            </div>
-                          </div>
 
-                          {/* XP Points */}
-                          <div className="flex items-center gap-2">
-                            <Trophy className={cn('h-5 w-5', entry.rank <= 3 ? 'text-inherit' : 'text-primary')} />
-                            <span className={cn('font-bold text-lg', entry.rank <= 3 && 'text-inherit')}>
-                              {entry.xp_points.toLocaleString()}
-                            </span>
+                            {/* XP secondary */}
+                            <div className="hidden sm:flex items-center gap-1 text-muted-foreground">
+                              <Trophy className="h-4 w-4" />
+                              <span className="text-sm font-medium">{entry.xp_points.toLocaleString()}</span>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Hover reveal - Additional stats */}
-                        <div className={cn(
-                          'overflow-hidden transition-all duration-300 max-h-0 opacity-0 group-hover:max-h-24 group-hover:opacity-100',
-                          entry.rank <= 3 ? 'border-t border-white/20' : 'border-t border-border'
-                        )}>
-                          <div className="px-4 py-3 flex items-center justify-center gap-8 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Zap className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-yellow-500')} />
-                              <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
-                                {language === 'ar' ? 'معدل XP/ساعة:' : 'XP/hour:'}{' '}
-                                <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>{xpPerHour}</span>
-                              </span>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Standard XP leaderboard table */
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    {t.topStudents}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {leaderboard.map((entry) => {
+                      const isCurrentUser = userProfile?.display_name === entry.display_name;
+                      const xpPerHour = entry.study_hours > 0 ? Math.round(entry.xp_points / entry.study_hours) : 0;
+                      const quizAvg = entry.quizzes_completed > 0 ? Math.round(entry.xp_points / entry.quizzes_completed) : 0;
+                      
+                      return (
+                        <div
+                          key={entry.rank}
+                          className={cn(
+                            'group relative rounded-lg transition-all duration-300',
+                            entry.rank <= 3 ? getRankBadgeClass(entry.rank) : 'bg-muted/50 hover:bg-muted',
+                            isCurrentUser && entry.rank > 3 && 'ring-2 ring-primary bg-primary/5',
+                            'hover:shadow-lg hover:scale-[1.01]'
+                          )}
+                        >
+                          <div className="flex items-center gap-4 p-4">
+                            <div className="w-12 flex justify-center">
+                              {getRankIcon(entry.rank)}
+                            </div>
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <Avatar className="h-10 w-10 transition-transform duration-300 group-hover:scale-110">
+                                <AvatarImage src={entry.avatar_url || undefined} />
+                                <AvatarFallback>{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className={cn('font-medium truncate', entry.rank <= 3 && 'text-inherit')}>{entry.display_name}</p>
+                                  {isCurrentUser && (
+                                    <Badge variant="secondary" className="text-xs">{t.you}</Badge>
+                                  )}
+                                  <StreakBadgeDisplay streakDays={entry.streak_days} />
+                                </div>
+                                <p className={cn('text-sm', entry.rank <= 3 ? 'opacity-80' : 'text-muted-foreground')}>{t.level} {entry.level}</p>
+                              </div>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-6">
+                              <div className="text-center">
+                                <div className="flex items-center gap-1">
+                                  <Flame className="h-4 w-4 text-orange-500" />
+                                  <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.streak_days}</span>
+                                </div>
+                                <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.streak}</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center gap-1">
+                                  <BookOpen className="h-4 w-4 text-blue-500" />
+                                  <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.quizzes_completed}</span>
+                                </div>
+                                <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.quizzes}</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4 text-green-500" />
+                                  <span className={cn('font-medium', entry.rank <= 3 && 'text-inherit')}>{entry.study_hours}{t.hours}</span>
+                                </div>
+                                <p className={cn('text-xs', entry.rank <= 3 ? 'opacity-70' : 'text-muted-foreground')}>{t.studyHours}</p>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Target className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-purple-500')} />
-                              <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
-                                {language === 'ar' ? 'معدل XP/اختبار:' : 'XP/quiz:'}{' '}
-                                <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>{quizAvg}</span>
-                              </span>
+                              <Trophy className={cn('h-5 w-5', entry.rank <= 3 ? 'text-inherit' : 'text-primary')} />
+                              <span className={cn('font-bold text-lg', entry.rank <= 3 && 'text-inherit')}>{entry.xp_points.toLocaleString()}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-green-500')} />
-                              <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
-                                {language === 'ar' ? 'الكفاءة:' : 'Efficiency:'}{' '}
-                                <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>
-                                  {entry.study_hours > 0 ? (entry.quizzes_completed / entry.study_hours).toFixed(1) : '0'} {language === 'ar' ? 'اختبار/ساعة' : 'quiz/h'}
+                          </div>
+                          <div className={cn(
+                            'overflow-hidden transition-all duration-300 max-h-0 opacity-0 group-hover:max-h-24 group-hover:opacity-100',
+                            entry.rank <= 3 ? 'border-t border-white/20' : 'border-t border-border'
+                          )}>
+                            <div className="px-4 py-3 flex items-center justify-center gap-8 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Zap className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-yellow-500')} />
+                                <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
+                                  {language === 'ar' ? 'معدل XP/ساعة:' : 'XP/hour:'}{' '}
+                                  <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>{xpPerHour}</span>
                                 </span>
-                              </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Target className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-purple-500')} />
+                                <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
+                                  {language === 'ar' ? 'معدل XP/اختبار:' : 'XP/quiz:'}{' '}
+                                  <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>{quizAvg}</span>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <TrendingUp className={cn('h-4 w-4', entry.rank <= 3 ? 'text-inherit opacity-80' : 'text-green-500')} />
+                                <span className={cn(entry.rank <= 3 ? 'text-inherit opacity-90' : 'text-muted-foreground')}>
+                                  {language === 'ar' ? 'الكفاءة:' : 'Efficiency:'}{' '}
+                                  <span className={cn('font-semibold', entry.rank <= 3 ? 'text-inherit' : 'text-foreground')}>
+                                    {entry.study_hours > 0 ? (entry.quizzes_completed / entry.study_hours).toFixed(1) : '0'} {language === 'ar' ? 'اختبار/ساعة' : 'quiz/h'}
+                                  </span>
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </main>
