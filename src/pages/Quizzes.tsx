@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuizzes, Quiz, QuizQuestion } from '@/hooks/useQuizzes';
+import { useMaterials, Material } from '@/hooks/useMaterials';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +16,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, BookOpen, Clock, Trophy, Loader2, 
-  ChevronRight, ChevronLeft, Check, X, Trash2 
+  ChevronRight, ChevronLeft, Check, X, Trash2,
+  FileText, Sparkles, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
