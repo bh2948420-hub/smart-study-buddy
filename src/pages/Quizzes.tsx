@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuizzes, Quiz, QuizQuestion } from '@/hooks/useQuizzes';
+import { useMaterials, Material } from '@/hooks/useMaterials';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +16,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, BookOpen, Clock, Trophy, Loader2, 
-  ChevronRight, ChevronLeft, Check, X, Trash2 
+  ChevronRight, ChevronLeft, Check, X, Trash2,
+  FileText, Sparkles, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +27,7 @@ const Quizzes = () => {
     quizzes, loading, generating, 
     generateQuiz, fetchQuizWithQuestions, submitQuizResult, deleteQuiz 
   } = useQuizzes();
+  const { materials, loading: materialsLoading } = useMaterials();
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newQuizTitle, setNewQuizTitle] = useState('');
@@ -31,6 +35,7 @@ const Quizzes = () => {
   const [newQuizContent, setNewQuizContent] = useState('');
   const [newQuizDifficulty, setNewQuizDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState('5');
+  const [generatingFromMaterial, setGeneratingFromMaterial] = useState<number | null>(null);
   
   // Quiz taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
@@ -42,6 +47,60 @@ const Quizzes = () => {
   const [loadingQuiz, setLoadingQuiz] = useState(false);
 
   const subjects = ['رياضيات', 'فيزياء', 'كيمياء', 'أحياء', 'لغة عربية', 'إنجليزي', 'تاريخ', 'جغرافيا'];
+
+  // Group materials by subject
+  const materialsBySubject = materials.reduce<Record<string, Material[]>>((acc, mat) => {
+    const key = mat.subject || (language === 'ar' ? 'بدون مادة' : 'No Subject');
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(mat);
+    return acc;
+  }, {});
+
+  const handleAutoGenerateQuiz = async (material: Material) => {
+    setGeneratingFromMaterial(material.id);
+    try {
+      let content = '';
+
+      // Extract text based on file type
+      if (material.file_type === 'pdf') {
+        const response = await supabase.functions.invoke('extract-pdf-text', {
+          body: { filePath: material.file_path }
+        });
+        if (response.data?.extracted && response.data?.text) {
+          content = response.data.text;
+        }
+      }
+
+      // For non-PDF or if extraction failed, use file name as context
+      if (!content) {
+        content = `${material.file_name} - ${material.subject || ''} - ${material.description || ''}`;
+      }
+
+      if (content.length < 20) {
+        throw new Error('لم يتم استخراج محتوى كافٍ');
+      }
+
+      const title = material.file_name.replace(/\.[^/.]+$/, '');
+      const quiz = await generateQuiz(
+        content,
+        title,
+        material.subject || '',
+        'medium',
+        material.id,
+        5
+      );
+
+      // Auto-start the quiz
+      if (quiz) {
+        await startQuiz(quiz);
+      }
+    } catch (error) {
+      console.error('Auto generate error:', error);
+    } finally {
+      setGeneratingFromMaterial(null);
+    }
+  };
+
 
   const handleCreateQuiz = async () => {
     if (!newQuizTitle || !newQuizContent) return;
@@ -414,6 +473,56 @@ const Quizzes = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Quick Quiz from Materials */}
+        {materials.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Zap className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'اختبار سريع من ملفاتك' : 'Quick Quiz from Your Files'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'ar' 
+                  ? 'اضغط على أي درس وسيتم إنشاء اختبار تلقائي فوراً'
+                  : 'Click any lesson to auto-generate a quiz instantly'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(materialsBySubject).map(([subject, mats]) => (
+                <div key={subject}>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">{subject}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {mats.map((mat) => (
+                      <Button
+                        key={mat.id}
+                        variant="outline"
+                        className="justify-start gap-2 h-auto py-3 px-4 text-start"
+                        disabled={generatingFromMaterial === mat.id || generating}
+                        onClick={() => handleAutoGenerateQuiz(mat)}
+                      >
+                        {generatingFromMaterial === mat.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                        ) : (
+                          <FileText className="h-4 w-4 shrink-0 text-primary" />
+                        )}
+                        <span className="truncate text-sm">
+                          {mat.file_name.replace(/\.[^/.]+$/, '')}
+                        </span>
+                        {generatingFromMaterial === mat.id && (
+                          <Badge variant="secondary" className="mr-auto text-xs">
+                            <Sparkles className="h-3 w-3 ml-1" />
+                            {language === 'ar' ? 'جاري الإنشاء...' : 'Generating...'}
+                          </Badge>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {quizzes.length === 0 ? (
           <Card>
