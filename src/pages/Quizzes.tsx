@@ -27,6 +27,7 @@ const Quizzes = () => {
     quizzes, loading, generating, 
     generateQuiz, fetchQuizWithQuestions, submitQuizResult, deleteQuiz 
   } = useQuizzes();
+  const { materials, loading: materialsLoading } = useMaterials();
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newQuizTitle, setNewQuizTitle] = useState('');
@@ -34,6 +35,7 @@ const Quizzes = () => {
   const [newQuizContent, setNewQuizContent] = useState('');
   const [newQuizDifficulty, setNewQuizDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState('5');
+  const [generatingFromMaterial, setGeneratingFromMaterial] = useState<number | null>(null);
   
   // Quiz taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
@@ -45,6 +47,60 @@ const Quizzes = () => {
   const [loadingQuiz, setLoadingQuiz] = useState(false);
 
   const subjects = ['رياضيات', 'فيزياء', 'كيمياء', 'أحياء', 'لغة عربية', 'إنجليزي', 'تاريخ', 'جغرافيا'];
+
+  // Group materials by subject
+  const materialsBySubject = materials.reduce<Record<string, Material[]>>((acc, mat) => {
+    const key = mat.subject || (language === 'ar' ? 'بدون مادة' : 'No Subject');
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(mat);
+    return acc;
+  }, {});
+
+  const handleAutoGenerateQuiz = async (material: Material) => {
+    setGeneratingFromMaterial(material.id);
+    try {
+      let content = '';
+
+      // Extract text based on file type
+      if (material.file_type === 'pdf') {
+        const response = await supabase.functions.invoke('extract-pdf-text', {
+          body: { filePath: material.file_path }
+        });
+        if (response.data?.extracted && response.data?.text) {
+          content = response.data.text;
+        }
+      }
+
+      // For non-PDF or if extraction failed, use file name as context
+      if (!content) {
+        content = `${material.file_name} - ${material.subject || ''} - ${material.description || ''}`;
+      }
+
+      if (content.length < 20) {
+        throw new Error('لم يتم استخراج محتوى كافٍ');
+      }
+
+      const title = material.file_name.replace(/\.[^/.]+$/, '');
+      const quiz = await generateQuiz(
+        content,
+        title,
+        material.subject || '',
+        'medium',
+        material.id,
+        5
+      );
+
+      // Auto-start the quiz
+      if (quiz) {
+        await startQuiz(quiz);
+      }
+    } catch (error) {
+      console.error('Auto generate error:', error);
+    } finally {
+      setGeneratingFromMaterial(null);
+    }
+  };
+
 
   const handleCreateQuiz = async () => {
     if (!newQuizTitle || !newQuizContent) return;
