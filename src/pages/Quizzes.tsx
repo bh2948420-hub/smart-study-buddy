@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Plus, BookOpen, Clock, Trophy, Loader2, 
   ChevronRight, ChevronLeft, Check, X, Trash2,
-  FileText, Sparkles, Zap
+  FileText, Sparkles, Zap, Upload, FileUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
