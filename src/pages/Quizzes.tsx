@@ -474,6 +474,56 @@ const Quizzes = () => {
           </Dialog>
         </div>
 
+        {/* Quick Quiz from Materials */}
+        {materials.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Zap className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'اختبار سريع من ملفاتك' : 'Quick Quiz from Your Files'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'ar' 
+                  ? 'اضغط على أي درس وسيتم إنشاء اختبار تلقائي فوراً'
+                  : 'Click any lesson to auto-generate a quiz instantly'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(materialsBySubject).map(([subject, mats]) => (
+                <div key={subject}>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">{subject}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {mats.map((mat) => (
+                      <Button
+                        key={mat.id}
+                        variant="outline"
+                        className="justify-start gap-2 h-auto py-3 px-4 text-start"
+                        disabled={generatingFromMaterial === mat.id || generating}
+                        onClick={() => handleAutoGenerateQuiz(mat)}
+                      >
+                        {generatingFromMaterial === mat.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                        ) : (
+                          <FileText className="h-4 w-4 shrink-0 text-primary" />
+                        )}
+                        <span className="truncate text-sm">
+                          {mat.file_name.replace(/\.[^/.]+$/, '')}
+                        </span>
+                        {generatingFromMaterial === mat.id && (
+                          <Badge variant="secondary" className="mr-auto text-xs">
+                            <Sparkles className="h-3 w-3 ml-1" />
+                            {language === 'ar' ? 'جاري الإنشاء...' : 'Generating...'}
+                          </Badge>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {quizzes.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
