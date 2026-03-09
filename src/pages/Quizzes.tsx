@@ -4,6 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuizzes, Quiz, QuizQuestion } from '@/hooks/useQuizzes';
 import { useMaterials, Material } from '@/hooks/useMaterials';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Plus, BookOpen, Clock, Trophy, Loader2, 
   ChevronRight, ChevronLeft, Check, X, Trash2,
-  FileText, Sparkles, Zap
+  FileText, Sparkles, Zap, Upload, FileUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,8 +28,8 @@ const Quizzes = () => {
     quizzes, loading, generating, 
     generateQuiz, fetchQuizWithQuestions, submitQuizResult, deleteQuiz 
   } = useQuizzes();
-  const { materials, loading: materialsLoading } = useMaterials();
-  
+  const { materials, loading: materialsLoading, uploadMaterial } = useMaterials();
+  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newQuizTitle, setNewQuizTitle] = useState('');
   const [newQuizSubject, setNewQuizSubject] = useState('');
@@ -36,7 +37,8 @@ const Quizzes = () => {
   const [newQuizDifficulty, setNewQuizDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState('5');
   const [generatingFromMaterial, setGeneratingFromMaterial] = useState<number | null>(null);
-  
+  const [uploadingAndGenerating, setUploadingAndGenerating] = useState(false);
+  const [uploadSubject, setUploadSubject] = useState('');
   // Quiz taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -101,6 +103,31 @@ const Quizzes = () => {
     }
   };
 
+  const handleUploadAndGenerate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingAndGenerating(true);
+    try {
+      // Upload the file first
+      const material = await uploadMaterial(file, uploadSubject || undefined);
+      if (!material) throw new Error('Upload failed');
+
+      // Now auto-generate quiz from it
+      await handleAutoGenerateQuiz(material as Material);
+    } catch (error) {
+      console.error('Upload & generate error:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'فشل في رفع الملف وإنشاء الاختبار' : 'Failed to upload and generate quiz',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAndGenerating(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
 
   const handleCreateQuiz = async () => {
     if (!newQuizTitle || !newQuizContent) return;
@@ -473,6 +500,71 @@ const Quizzes = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Upload & Auto Quiz */}
+        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+          <CardContent className="py-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-3 text-center">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <FileUp className="h-6 w-6 text-primary" />
+                </div>
+                <div className="text-start">
+                  <h3 className="font-semibold text-lg">
+                    {language === 'ar' ? 'ارفع ملف واختبر نفسك فوراً' : 'Upload & Quiz Instantly'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'ar' 
+                      ? 'ارفع ملف PDF أو أي مستند والذكاء الاصطناعي هيعملك امتحان تلقائي عليه'
+                      : 'Upload a PDF or document and AI will auto-generate a quiz from it'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg">
+                <Select value={uploadSubject} onValueChange={setUploadSubject}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر المادة (اختياري)' : 'Subject (optional)'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map(subject => (
+                      <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <label className="flex-1 w-full">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    className="hidden"
+                    onChange={handleUploadAndGenerate}
+                    disabled={uploadingAndGenerating || generating}
+                  />
+                  <Button 
+                    className="w-full gap-2" 
+                    disabled={uploadingAndGenerating || generating}
+                    asChild
+                  >
+                    <span>
+                      {uploadingAndGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {language === 'ar' ? 'جاري الرفع والإنشاء...' : 'Uploading & Generating...'}
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          {language === 'ar' ? 'ارفع ملف وابدأ الامتحان' : 'Upload & Start Quiz'}
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Quick Quiz from Materials */}
         {materials.length > 0 && (
