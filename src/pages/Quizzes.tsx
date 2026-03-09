@@ -28,8 +28,8 @@ const Quizzes = () => {
     quizzes, loading, generating, 
     generateQuiz, fetchQuizWithQuestions, submitQuizResult, deleteQuiz 
   } = useQuizzes();
-  const { materials, loading: materialsLoading } = useMaterials();
-  
+  const { materials, loading: materialsLoading, uploadMaterial } = useMaterials();
+  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newQuizTitle, setNewQuizTitle] = useState('');
   const [newQuizSubject, setNewQuizSubject] = useState('');
