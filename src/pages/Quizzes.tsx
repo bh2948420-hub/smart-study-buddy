@@ -37,7 +37,8 @@ const Quizzes = () => {
   const [newQuizDifficulty, setNewQuizDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState('5');
   const [generatingFromMaterial, setGeneratingFromMaterial] = useState<number | null>(null);
-  
+  const [uploadingAndGenerating, setUploadingAndGenerating] = useState(false);
+  const [uploadSubject, setUploadSubject] = useState('');
   // Quiz taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
