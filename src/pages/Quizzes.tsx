@@ -103,6 +103,31 @@ const Quizzes = () => {
     }
   };
 
+  const handleUploadAndGenerate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingAndGenerating(true);
+    try {
+      // Upload the file first
+      const material = await uploadMaterial(file, uploadSubject || undefined);
+      if (!material) throw new Error('Upload failed');
+
+      // Now auto-generate quiz from it
+      await handleAutoGenerateQuiz(material as Material);
+    } catch (error) {
+      console.error('Upload & generate error:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'فشل في رفع الملف وإنشاء الاختبار' : 'Failed to upload and generate quiz',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAndGenerating(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
 
   const handleCreateQuiz = async () => {
     if (!newQuizTitle || !newQuizContent) return;
