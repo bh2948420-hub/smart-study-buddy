@@ -60,7 +60,7 @@ export const PomodoroTimer = ({ onSessionComplete, onStart, onPause }: PomodoroT
   }, [mode, timeLeft, onSessionComplete]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
