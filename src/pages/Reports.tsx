@@ -33,6 +33,12 @@ const Reports = () => {
         navigate('/auth');
       } else {
         setLoading(false);
+        // Fetch quiz results
+        const results = await fetchQuizResults();
+        setQuizResults(results.map(r => ({
+          percentage: Number(r.percentage),
+          completed_at: r.completed_at,
+        })));
       }
     };
     checkAuth();
