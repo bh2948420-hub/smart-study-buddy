@@ -22,8 +22,8 @@ const Reports = () => {
   const navigate = useNavigate();
   const { sessions, loading: sessionsLoading } = useStudySessions();
   const { tasks, loading: tasksLoading } = useTasks();
-  const { quizzes, loading: quizzesLoading } = useQuizzes();
-  const quizResults: QuizResultData[] = []; // Quiz results would be fetched separately
+  const { quizzes, loading: quizzesLoading, fetchQuizResults } = useQuizzes();
+  const [quizResults, setQuizResults] = useState<QuizResultData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
