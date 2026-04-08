@@ -146,6 +146,15 @@ export function MaterialCard({
                     <Sparkles className="h-4 w-4 mr-2" />
                     {t.generateQuiz}
                   </DropdownMenuItem>
+                  {onGenerateMindMap && (
+                    <DropdownMenuItem 
+                      onClick={() => onGenerateMindMap(material)}
+                      className="text-emerald-600"
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      {t.mindMap}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     onClick={() => onDelete(material.id, material.file_path)}
                     className="text-destructive"
