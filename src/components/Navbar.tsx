@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GraduationCap, Menu, X, Globe, Trophy, Brain, Focus } from 'lucide-react';
+import { GraduationCap, Menu, X, Globe, Trophy, Brain, Focus, Swords } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
