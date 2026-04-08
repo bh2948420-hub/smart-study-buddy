@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   FileText, Image, Video, Music, File, Download, Trash2,
-  MoreVertical, Sparkles, Eye, BookOpen
+  MoreVertical, Sparkles, Eye, BookOpen, Brain
 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,6 +22,7 @@ export interface MaterialCardProps {
   onDelete: (id: number, filePath: string) => void;
   onGenerateQuiz: (material: Material) => void;
   onPreview: (material: Material) => void;
+  onGenerateMindMap?: (material: Material) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (material: Material) => void;
@@ -53,6 +54,7 @@ export function MaterialCard({
   onDelete, 
   onGenerateQuiz,
   onPreview,
+  onGenerateMindMap,
   selectionMode = false,
   isSelected = false,
   onToggleSelect
@@ -65,6 +67,7 @@ export function MaterialCard({
     download: language === 'ar' ? 'تحميل' : 'Download',
     delete: language === 'ar' ? 'حذف' : 'Delete',
     generateQuiz: language === 'ar' ? 'إنشاء اختبار' : 'Generate Quiz',
+    mindMap: language === 'ar' ? 'خريطة ذهنية' : 'Mind Map',
     preview: language === 'ar' ? 'معاينة' : 'Preview',
     actions: language === 'ar' ? 'الإجراءات' : 'Actions',
   };
@@ -143,6 +146,15 @@ export function MaterialCard({
                     <Sparkles className="h-4 w-4 mr-2" />
                     {t.generateQuiz}
                   </DropdownMenuItem>
+                  {onGenerateMindMap && (
+                    <DropdownMenuItem 
+                      onClick={() => onGenerateMindMap(material)}
+                      className="text-emerald-600"
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      {t.mindMap}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     onClick={() => onDelete(material.id, material.file_path)}
                     className="text-destructive"
@@ -165,32 +177,48 @@ export function MaterialCard({
 
           {/* Quick Actions - Only show when not in selection mode */}
           {!selectionMode && (
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPreview(material);
-                }}
-              >
-                <Eye className="h-3 w-3 mr-1" />
-                {t.preview}
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onGenerateQuiz(material);
-                }}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                {t.generateQuiz}
-              </Button>
-            </div>
+            <>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview(material);
+                  }}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  {t.preview}
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateQuiz(material);
+                  }}
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {t.generateQuiz}
+                </Button>
+              </div>
+              {onGenerateMindMap && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs gap-1 mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateMindMap(material);
+                  }}
+                >
+                  <Brain className="h-3 w-3" />
+                  {t.mindMap}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </CardContent>

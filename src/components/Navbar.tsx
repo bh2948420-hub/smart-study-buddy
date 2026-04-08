@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GraduationCap, Menu, X, Globe, Trophy, Brain, Focus } from 'lucide-react';
+import { GraduationCap, Menu, X, Globe, Trophy, Brain, Focus, Swords } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ export function Navbar() {
     { to: '/materials', label: language === 'ar' ? 'المواد' : 'Materials' },
     { to: '/quizzes', label: language === 'ar' ? 'الاختبارات' : 'Quizzes' },
     { to: '/leaderboard', label: language === 'ar' ? 'المتصدرين' : 'Leaderboard', icon: Trophy },
+    { to: '/challenge', label: language === 'ar' ? 'تحدي مباشر' : 'Live Battle', icon: Swords },
     { to: '/insights', label: language === 'ar' ? 'التحليلات' : 'Insights', icon: Brain },
   ];
 

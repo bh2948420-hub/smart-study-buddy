@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMaterials, Material } from '@/hooks/useMaterials';
+import { useMindMap } from '@/hooks/useMindMap';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2 } from 'lucide-react';
 
@@ -12,10 +13,12 @@ import { MaterialsBySubject } from '@/components/materials/MaterialsBySubject';
 import { MaterialPreviewDialog } from '@/components/materials/MaterialPreviewDialog';
 import { QuizGeneratorDialog } from '@/components/materials/QuizGeneratorDialog';
 import { MultiQuizGeneratorDialog } from '@/components/materials/MultiQuizGeneratorDialog';
+import { MindMapViewer } from '@/components/mindmap/MindMapViewer';
 
 const Materials = () => {
   const { language, dir } = useLanguage();
   const { materials, loading, uploading, uploadMaterial, deleteMaterial, downloadFile } = useMaterials();
+  const { mindMap, loading: mindMapLoading, selectedNode, setSelectedNode, generateMindMap, clearMindMap } = useMindMap();
   
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +67,10 @@ const Materials = () => {
 
   const handleGenerateQuiz = (material: Material) => {
     setQuizMaterial(material);
+  };
+
+  const handleGenerateMindMap = async (material: Material) => {
+    await generateMindMap(material.id, undefined, language);
   };
 
   // Multi-select handlers
@@ -139,12 +146,36 @@ const Materials = () => {
           onDelete={handleDelete}
           onGenerateQuiz={handleGenerateQuiz}
           onPreview={handlePreview}
+          onGenerateMindMap={handleGenerateMindMap}
           selectionMode={selectionMode}
           selectedMaterials={selectedMaterials}
           onToggleSelect={handleToggleSelect}
           onToggleSelectionMode={handleToggleSelectionMode}
           onGenerateCombinedQuiz={handleGenerateCombinedQuiz}
         />
+
+        {/* Mind Map Viewer */}
+        {(mindMap || mindMapLoading) && (
+          <div className="animate-fade-in">
+            {mindMapLoading ? (
+              <div className="flex items-center justify-center p-12 bg-muted/30 rounded-xl border">
+                <div className="text-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'ar' ? 'جاري إنشاء الخريطة الذهنية...' : 'Generating mind map...'}
+                  </p>
+                </div>
+              </div>
+            ) : mindMap ? (
+              <MindMapViewer
+                data={mindMap}
+                onClose={clearMindMap}
+                onNodeClick={setSelectedNode}
+                selectedNodeId={selectedNode?.id || null}
+              />
+            ) : null}
+          </div>
+        )}
       </main>
 
       {/* Preview Dialog */}

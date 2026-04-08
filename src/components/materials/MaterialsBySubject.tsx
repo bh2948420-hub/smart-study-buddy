@@ -20,6 +20,7 @@ interface MaterialsBySubjectProps {
   onDelete: (id: number, filePath: string) => void;
   onGenerateQuiz: (material: Material) => void;
   onPreview: (material: Material) => void;
+  onGenerateMindMap?: (material: Material) => void;
   selectionMode: boolean;
   selectedMaterials: Material[];
   onToggleSelect: (material: Material) => void;
@@ -33,6 +34,7 @@ export function MaterialsBySubject({
   onDelete, 
   onGenerateQuiz,
   onPreview,
+  onGenerateMindMap,
   selectionMode,
   selectedMaterials,
   onToggleSelect,
@@ -259,6 +261,7 @@ export function MaterialsBySubject({
                         onDelete={onDelete}
                         onGenerateQuiz={onGenerateQuiz}
                         onPreview={onPreview}
+                        onGenerateMindMap={onGenerateMindMap}
                         selectionMode={selectionMode}
                         isSelected={isSelected(material)}
                         onToggleSelect={onToggleSelect}
@@ -311,6 +314,7 @@ export function MaterialsBySubject({
                       onDelete={onDelete}
                       onGenerateQuiz={onGenerateQuiz}
                       onPreview={onPreview}
+                      onGenerateMindMap={onGenerateMindMap}
                       selectionMode={selectionMode}
                       isSelected={isSelected(material)}
                       onToggleSelect={onToggleSelect}
