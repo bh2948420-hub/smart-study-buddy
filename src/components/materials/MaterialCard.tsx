@@ -22,6 +22,7 @@ export interface MaterialCardProps {
   onDelete: (id: number, filePath: string) => void;
   onGenerateQuiz: (material: Material) => void;
   onPreview: (material: Material) => void;
+  onGenerateMindMap?: (material: Material) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (material: Material) => void;
