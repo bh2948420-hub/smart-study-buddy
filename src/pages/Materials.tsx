@@ -69,6 +69,12 @@ const Materials = () => {
     setQuizMaterial(material);
   };
 
+  const handleGenerateMindMap = async (material: Material) => {
+    await generateMindMap(undefined, undefined, language);
+    // Use material id to fetch content via edge function
+    await generateMindMap(material.id, undefined, language);
+  };
+
   // Multi-select handlers
   const handleToggleSelect = useCallback((material: Material) => {
     setSelectedMaterials(prev => {
