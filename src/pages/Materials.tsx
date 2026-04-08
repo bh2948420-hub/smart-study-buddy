@@ -146,12 +146,36 @@ const Materials = () => {
           onDelete={handleDelete}
           onGenerateQuiz={handleGenerateQuiz}
           onPreview={handlePreview}
+          onGenerateMindMap={handleGenerateMindMap}
           selectionMode={selectionMode}
           selectedMaterials={selectedMaterials}
           onToggleSelect={handleToggleSelect}
           onToggleSelectionMode={handleToggleSelectionMode}
           onGenerateCombinedQuiz={handleGenerateCombinedQuiz}
         />
+
+        {/* Mind Map Viewer */}
+        {(mindMap || mindMapLoading) && (
+          <div className="animate-fade-in">
+            {mindMapLoading ? (
+              <div className="flex items-center justify-center p-12 bg-muted/30 rounded-xl border">
+                <div className="text-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'ar' ? 'جاري إنشاء الخريطة الذهنية...' : 'Generating mind map...'}
+                  </p>
+                </div>
+              </div>
+            ) : mindMap ? (
+              <MindMapViewer
+                data={mindMap}
+                onClose={clearMindMap}
+                onNodeClick={setSelectedNode}
+                selectedNodeId={selectedNode?.id || null}
+              />
+            ) : null}
+          </div>
+        )}
       </main>
 
       {/* Preview Dialog */}
