@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMaterials, Material } from '@/hooks/useMaterials';
+import { useMindMap } from '@/hooks/useMindMap';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2 } from 'lucide-react';
 
@@ -12,6 +13,7 @@ import { MaterialsBySubject } from '@/components/materials/MaterialsBySubject';
 import { MaterialPreviewDialog } from '@/components/materials/MaterialPreviewDialog';
 import { QuizGeneratorDialog } from '@/components/materials/QuizGeneratorDialog';
 import { MultiQuizGeneratorDialog } from '@/components/materials/MultiQuizGeneratorDialog';
+import { MindMapViewer } from '@/components/mindmap/MindMapViewer';
 
 const Materials = () => {
   const { language, dir } = useLanguage();
