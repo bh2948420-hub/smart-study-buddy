@@ -70,8 +70,6 @@ const Materials = () => {
   };
 
   const handleGenerateMindMap = async (material: Material) => {
-    await generateMindMap(undefined, undefined, language);
-    // Use material id to fetch content via edge function
     await generateMindMap(material.id, undefined, language);
   };
 
