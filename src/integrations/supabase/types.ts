@@ -53,6 +53,106 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_room_answers: {
+        Row: {
+          answer: string
+          answered_at: string
+          id: string
+          is_correct: boolean
+          question_index: number
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          question_index: number
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          question_index?: number
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_room_answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_rooms: {
+        Row: {
+          created_at: string
+          current_question_index: number
+          finished_at: string | null
+          guest_display_name: string | null
+          guest_score: number
+          guest_user_id: string | null
+          host_display_name: string | null
+          host_score: number
+          host_user_id: string
+          id: string
+          quiz_id: number | null
+          room_code: string
+          started_at: string | null
+          status: string
+          total_questions: number
+        }
+        Insert: {
+          created_at?: string
+          current_question_index?: number
+          finished_at?: string | null
+          guest_display_name?: string | null
+          guest_score?: number
+          guest_user_id?: string | null
+          host_display_name?: string | null
+          host_score?: number
+          host_user_id: string
+          id?: string
+          quiz_id?: number | null
+          room_code: string
+          started_at?: string | null
+          status?: string
+          total_questions?: number
+        }
+        Update: {
+          created_at?: string
+          current_question_index?: number
+          finished_at?: string | null
+          guest_display_name?: string | null
+          guest_score?: number
+          guest_user_id?: string | null
+          host_display_name?: string | null
+          host_score?: number
+          host_user_id?: string
+          id?: string
+          quiz_id?: number | null
+          room_code?: string
+          started_at?: string | null
+          status?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_rooms_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       curriculum_context: {
         Row: {
           content_text: string | null
