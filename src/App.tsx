@@ -17,6 +17,7 @@ import Reports from "./pages/Reports";
 import Leaderboard from "./pages/Leaderboard";
 import Insights from "./pages/Insights";
 import FocusMode from "./pages/FocusMode";
+import Challenge from "./pages/Challenge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
