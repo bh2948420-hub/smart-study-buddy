@@ -54,6 +54,7 @@ export function MaterialCard({
   onDelete, 
   onGenerateQuiz,
   onPreview,
+  onGenerateMindMap,
   selectionMode = false,
   isSelected = false,
   onToggleSelect
@@ -66,6 +67,7 @@ export function MaterialCard({
     download: language === 'ar' ? 'تحميل' : 'Download',
     delete: language === 'ar' ? 'حذف' : 'Delete',
     generateQuiz: language === 'ar' ? 'إنشاء اختبار' : 'Generate Quiz',
+    mindMap: language === 'ar' ? 'خريطة ذهنية' : 'Mind Map',
     preview: language === 'ar' ? 'معاينة' : 'Preview',
     actions: language === 'ar' ? 'الإجراءات' : 'Actions',
   };
