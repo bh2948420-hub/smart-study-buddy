@@ -34,6 +34,7 @@ export function MaterialsBySubject({
   onDelete, 
   onGenerateQuiz,
   onPreview,
+  onGenerateMindMap,
   selectionMode,
   selectedMaterials,
   onToggleSelect,
