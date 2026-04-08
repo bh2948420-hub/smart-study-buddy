@@ -177,46 +177,48 @@ export function MaterialCard({
 
           {/* Quick Actions - Only show when not in selection mode */}
           {!selectionMode && (
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPreview(material);
-                }}
-              >
-                <Eye className="h-3 w-3 mr-1" />
-                {t.preview}
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onGenerateQuiz(material);
-                }}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                {t.generateQuiz}
-              </Button>
-            </div>
-            {onGenerateMindMap && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs gap-1 border-emerald-300 text-emerald-600 hover:bg-emerald-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onGenerateMindMap(material);
-                }}
-              >
-                <Brain className="h-3 w-3" />
-                {t.mindMap}
-              </Button>
-            )}
+            <>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview(material);
+                  }}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  {t.preview}
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateQuiz(material);
+                  }}
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {t.generateQuiz}
+                </Button>
+              </div>
+              {onGenerateMindMap && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs gap-1 mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateMindMap(material);
+                  }}
+                >
+                  <Brain className="h-3 w-3" />
+                  {t.mindMap}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </CardContent>
