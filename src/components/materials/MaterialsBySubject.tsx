@@ -261,6 +261,7 @@ export function MaterialsBySubject({
                         onDelete={onDelete}
                         onGenerateQuiz={onGenerateQuiz}
                         onPreview={onPreview}
+                        onGenerateMindMap={onGenerateMindMap}
                         selectionMode={selectionMode}
                         isSelected={isSelected(material)}
                         onToggleSelect={onToggleSelect}
