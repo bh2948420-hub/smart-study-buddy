@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   FileText, Image, Video, Music, File, Download, Trash2,
-  MoreVertical, Sparkles, Eye, BookOpen
+  MoreVertical, Sparkles, Eye, BookOpen, Brain
 } from 'lucide-react';
 import { Material } from '@/hooks/useMaterials';
 import { useLanguage } from '@/contexts/LanguageContext';
