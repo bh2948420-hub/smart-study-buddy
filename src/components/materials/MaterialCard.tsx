@@ -203,6 +203,20 @@ export function MaterialCard({
                 {t.generateQuiz}
               </Button>
             </div>
+            {onGenerateMindMap && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1 border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onGenerateMindMap(material);
+                }}
+              >
+                <Brain className="h-3 w-3" />
+                {t.mindMap}
+              </Button>
+            )}
           )}
         </div>
       </CardContent>
