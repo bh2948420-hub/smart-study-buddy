@@ -18,6 +18,7 @@ import { MindMapViewer } from '@/components/mindmap/MindMapViewer';
 const Materials = () => {
   const { language, dir } = useLanguage();
   const { materials, loading, uploading, uploadMaterial, deleteMaterial, downloadFile } = useMaterials();
+  const { mindMap, loading: mindMapLoading, selectedNode, setSelectedNode, generateMindMap, clearMindMap } = useMindMap();
   
   // State
   const [searchQuery, setSearchQuery] = useState('');
