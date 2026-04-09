@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
@@ -41,6 +42,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showTimer, setShowTimer] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
   const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
