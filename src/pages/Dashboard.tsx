@@ -142,12 +142,16 @@ const Dashboard = () => {
     ? tasks.filter((task) => isSameDay(new Date(task.due_date), selectedDate))
     : [];
 
-  if (authLoading) {
+  if (authLoading || !onboardingChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingWizard onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
