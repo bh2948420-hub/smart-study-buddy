@@ -76,11 +76,22 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         navigate('/auth');
       } else {
         setUser(session.user);
+        // Check onboarding status
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('onboarding_completed')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (profile && !(profile as any).onboarding_completed) {
+          setShowOnboarding(true);
+        }
+        setOnboardingChecked(true);
       }
       setAuthLoading(false);
     });
