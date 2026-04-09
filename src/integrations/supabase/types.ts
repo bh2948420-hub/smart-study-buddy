@@ -727,6 +727,7 @@ export type Database = {
           id: number
           level: number | null
           notifications_enabled: boolean | null
+          onboarding_completed: boolean
           pomodoro_duration: number | null
           reminder_enabled: boolean | null
           reminder_time: string | null
@@ -746,6 +747,7 @@ export type Database = {
           id?: number
           level?: number | null
           notifications_enabled?: boolean | null
+          onboarding_completed?: boolean
           pomodoro_duration?: number | null
           reminder_enabled?: boolean | null
           reminder_time?: string | null
@@ -765,6 +767,7 @@ export type Database = {
           id?: number
           level?: number | null
           notifications_enabled?: boolean | null
+          onboarding_completed?: boolean
           pomodoro_duration?: number | null
           reminder_enabled?: boolean | null
           reminder_time?: string | null

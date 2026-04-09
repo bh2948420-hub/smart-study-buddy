@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
@@ -41,6 +42,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showTimer, setShowTimer] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
   const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
@@ -73,11 +76,22 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         navigate('/auth');
       } else {
         setUser(session.user);
+        // Check onboarding status
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('onboarding_completed')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (profile && !(profile as any).onboarding_completed) {
+          setShowOnboarding(true);
+        }
+        setOnboardingChecked(true);
       }
       setAuthLoading(false);
     });
@@ -128,12 +142,16 @@ const Dashboard = () => {
     ? tasks.filter((task) => isSameDay(new Date(task.due_date), selectedDate))
     : [];
 
-  if (authLoading) {
+  if (authLoading || !onboardingChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingWizard onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
