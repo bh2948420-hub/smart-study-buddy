@@ -182,8 +182,8 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
           {step === 1 && (
             <>
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                  <BookOpen className="h-8 w-8 text-orange-500" />
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <BookOpen className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">
                   {isAr ? 'إيه المواد اللي محتاج تحسنها؟' : 'Which subjects need improvement?'}
@@ -223,8 +223,8 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
           {step === 2 && (
             <>
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
-                  <Clock className="h-8 w-8 text-blue-500" />
+                <div className="mx-auto w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-3">
+                  <Clock className="h-8 w-8 text-secondary-foreground" />
                 </div>
                 <CardTitle className="text-xl">
                   {isAr ? 'كام ساعة بتذاكر في اليوم؟' : 'How many hours do you study daily?'}
@@ -269,8 +269,8 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
           {step === 3 && (
             <>
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                  <Sparkles className="h-8 w-8 text-green-500" />
+                <div className="mx-auto w-16 h-16 rounded-full bg-accent flex items-center justify-center mb-3">
+                  <Sparkles className="h-8 w-8 text-accent-foreground" />
                 </div>
                 <CardTitle className="text-xl">
                   {isAr ? '🎉 خطتك الدراسية جاهزة!' : '🎉 Your Study Plan is Ready!'}
