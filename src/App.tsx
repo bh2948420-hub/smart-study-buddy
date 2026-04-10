@@ -18,6 +18,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Insights from "./pages/Insights";
 import FocusMode from "./pages/FocusMode";
 import Challenge from "./pages/Challenge";
+import SupportRoom from "./pages/SupportRoom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/insights" element={<Insights />} />
             <Route path="/focus" element={<FocusMode />} />
             <Route path="/challenge" element={<Challenge />} />
+            <Route path="/support" element={<SupportRoom />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
