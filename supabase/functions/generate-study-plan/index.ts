@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { weakSubjects, studyHoursPerDay, goals, language = 'ar' } = await req.json();
+    const { weakSubjects, studyHoursPerDay, goals, language = 'ar', scheduleImageBase64 } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
@@ -25,24 +25,52 @@ serve(async (req) => {
 3. 💡 نصائح لتحسين المواد الضعيفة
 4. 🎯 أهداف قصيرة المدى (أسبوع)
 5. 🏆 أهداف طويلة المدى (شهر)
-6. 💪 رسالة تحفيزية شخصية`
+6. 💪 رسالة تحفيزية شخصية
+
+لو الطالب رفع صورة جدول مدرسي، حللها واستخرج المواد والأوقات واستخدمها في الخطة.`
       : `You are a smart educational consultant. Create a personalized study plan based on the student's info. Make it organized and practical with emojis. Sections:
 1. 📋 Situation Summary
 2. 📅 Suggested Weekly Plan
 3. 💡 Tips for Weak Subjects
 4. 🎯 Short-term Goals (1 week)
 5. 🏆 Long-term Goals (1 month)
-6. 💪 Personal Motivational Message`;
+6. 💪 Personal Motivational Message
 
-    const userPrompt = language === 'ar'
-      ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
+If the student uploaded a school schedule image, analyze it and extract subjects and times to use in the plan.`;
+
+    let userContent: any;
+    
+    if (scheduleImageBase64) {
+      // Use vision model with image
+      const textPart = language === 'ar'
+        ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
+عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
+أهداف الطالب: ${goals || 'مش محدد'}
+
+الصورة المرفقة هي جدول المدرسة بتاع الطالب. حلل الصورة واستخرج المواد والأوقات واستخدمها في الخطة الدراسية.
+اعملي خطة دراسية مفصلة ومحفزة!`
+        : `Weak subjects: ${weakSubjects || 'Not specified'}
+Study hours per day: ${studyHoursPerDay || 'Not specified'}
+Student goals: ${goals || 'Not specified'}
+
+The attached image is the student's school schedule. Analyze the image, extract subjects and times, and use them in the study plan.
+Create a detailed and motivating study plan!`;
+
+      userContent = [
+        { type: 'text', text: textPart },
+        { type: 'image_url', image_url: { url: scheduleImageBase64 } },
+      ];
+    } else {
+      userContent = language === 'ar'
+        ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
 عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
 أهداف الطالب: ${goals || 'مش محدد'}
 اعملي خطة دراسية مفصلة ومحفزة!`
-      : `Weak subjects: ${weakSubjects || 'Not specified'}
+        : `Weak subjects: ${weakSubjects || 'Not specified'}
 Study hours per day: ${studyHoursPerDay || 'Not specified'}
 Student goals: ${goals || 'Not specified'}
 Create a detailed and motivating study plan!`;
+    }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -54,7 +82,7 @@ Create a detailed and motivating study plan!`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: 'user', content: userContent },
         ],
       }),
     });
