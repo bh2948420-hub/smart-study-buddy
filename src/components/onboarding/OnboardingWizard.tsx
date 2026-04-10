@@ -1,18 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { 
   Upload, Clock, BookOpen, Target, Sparkles, Loader2, 
   ChevronLeft, ChevronRight, CheckCircle2, GraduationCap,
-  Calendar
+  Image, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -47,6 +45,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
   const { language, dir } = useLanguage();
   const navigate = useNavigate();
   const isAr = language === 'ar';
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(0);
   const [weakSubjects, setWeakSubjects] = useState<string[]>([]);
@@ -54,6 +53,9 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
   const [goals, setGoals] = useState('');
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [scheduleImage, setScheduleImage] = useState<string | null>(null);
+  const [schedulePreview, setSchedulePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const progress = ((step + 1) / STEPS) * 100;
 
@@ -61,6 +63,43 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
     setWeakSubjects(prev =>
       prev.includes(subject) ? prev.filter(s => s !== subject) : [...prev, subject]
     );
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(isAr ? 'من فضلك ارفع صورة فقط' : 'Please upload an image file only');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? 'حجم الصورة كبير جداً (الحد الأقصى 10MB)' : 'Image too large (max 10MB)');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setScheduleImage(base64);
+        setSchedulePreview(base64);
+        toast.success(isAr ? '✅ تم رفع صورة الجدول!' : '✅ Schedule image uploaded!');
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error(isAr ? 'حصل خطأ في رفع الصورة' : 'Error uploading image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setScheduleImage(null);
+    setSchedulePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const generatePlan = async () => {
@@ -72,6 +111,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
           studyHoursPerDay: studyHours,
           goals,
           language,
+          scheduleImageBase64: scheduleImage || undefined,
         },
       });
 
@@ -105,7 +145,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
   };
 
   const canGoNext = () => {
-    if (step === 0) return true; // welcome step
+    if (step === 0) return true;
     if (step === 1) return weakSubjects.length > 0;
     if (step === 2) return studyHours !== '';
     return true;
@@ -136,7 +176,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
         </div>
 
         <Card className="shadow-2xl border-2 animate-fade-in">
-          {/* Step 0: Welcome */}
+          {/* Step 0: Welcome + Schedule Upload */}
           {step === 0 && (
             <>
               <CardHeader className="text-center pb-2">
@@ -166,14 +206,54 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
                   ))}
                 </div>
 
-                <Button
-                  variant="outline"
-                  className="w-full mt-2"
-                  onClick={() => navigate('/upload-schedule')}
-                >
-                  <Upload className="h-4 w-4 me-2" />
-                  {isAr ? 'أو ارفع جدول المدرسة مباشرة' : 'Or upload your school schedule directly'}
-                </Button>
+                {/* Schedule Image Upload */}
+                <div className="border-2 border-dashed border-border rounded-xl p-4 mt-4 space-y-3">
+                  <p className="text-sm font-medium">
+                    <Image className="h-4 w-4 inline me-1" />
+                    {isAr ? 'ارفع صورة جدول المدرسة (اختياري)' : 'Upload school schedule image (optional)'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isAr 
+                      ? 'الـ AI هيحلل الصورة ويستخرج المواد والأوقات تلقائياً' 
+                      : 'AI will analyze the image and extract subjects & times automatically'}
+                  </p>
+
+                  {schedulePreview ? (
+                    <div className="relative inline-block">
+                      <img src={schedulePreview} alt="Schedule" className="max-h-40 rounded-lg border" />
+                      <button
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <p className="text-xs text-green-600 mt-1">
+                        {isAr ? '✅ تم رفع الصورة بنجاح' : '✅ Image uploaded successfully'}
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                    >
+                      {uploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin me-2" />
+                      ) : (
+                        <Upload className="h-4 w-4 me-2" />
+                      )}
+                      {isAr ? 'اختار صورة الجدول' : 'Choose schedule image'}
+                    </Button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </div>
               </CardContent>
             </>
           )}
