@@ -182,10 +182,13 @@ const Dashboard = () => {
                 : "Here's an overview of your tasks for today"}
             </p>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            {language === 'ar' ? 'خروج' : 'Logout'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ScheduleReuploadButton onTasksCreated={() => { /* tasks will refresh via useTasks */ window.location.reload(); }} />
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              {language === 'ar' ? 'خروج' : 'Logout'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
