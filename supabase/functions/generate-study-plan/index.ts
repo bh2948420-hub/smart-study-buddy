@@ -18,43 +18,102 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    const today = new Date();
+    const dayNames = language === 'ar' 
+      ? ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+      : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    // Generate next 7 days
+    const next7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      return { date: d.toISOString().split('T')[0], dayName: dayNames[d.getDay()] };
+    });
+
+    const daysInfo = next7Days.map(d => `${d.dayName} (${d.date})`).join(', ');
+
     const systemPrompt = language === 'ar'
-      ? `أنت مستشار تعليمي ذكي. مهمتك إنك تعمل خطة دراسية مخصصة للطالب بناءً على المعلومات اللي هيقولهالك. اكتب الخطة بالعربية بشكل منظم وعملي. استخدم إيموجي عشان تكون جذابة. قسم الخطة لـ:
-1. 📋 ملخص الحالة
-2. 📅 خطة أسبوعية مقترحة  
-3. 💡 نصائح لتحسين المواد الضعيفة
-4. 🎯 أهداف قصيرة المدى (أسبوع)
-5. 🏆 أهداف طويلة المدى (شهر)
-6. 💪 رسالة تحفيزية شخصية
+      ? `أنت مستشار تعليمي ذكي. مهمتك إنك تعمل خطة دراسية مخصصة للطالب.
 
-لو الطالب رفع صورة جدول مدرسي، حللها واستخرج المواد والأوقات واستخدمها في الخطة.`
-      : `You are a smart educational consultant. Create a personalized study plan based on the student's info. Make it organized and practical with emojis. Sections:
-1. 📋 Situation Summary
-2. 📅 Suggested Weekly Plan
-3. 💡 Tips for Weak Subjects
-4. 🎯 Short-term Goals (1 week)
-5. 🏆 Long-term Goals (1 month)
-6. 💪 Personal Motivational Message
+مهم جداً: لازم ترد بـ JSON فقط بالشكل ده:
+{
+  "plan": "النص الكامل للخطة بالماركداون",
+  "tasks": [
+    {
+      "title": "عنوان المهمة",
+      "description": "وصف قصير",
+      "due_date": "YYYY-MM-DD",
+      "priority": "high أو medium أو low"
+    }
+  ]
+}
 
-If the student uploaded a school schedule image, analyze it and extract subjects and times to use in the plan.`;
+قواعد مهمة:
+1. الخطة (plan) لازم تكون بالماركداون وتشمل:
+   - 📋 ملخص الحالة
+   - 📅 خطة يومية مفصلة لكل يوم من الأسبوع (مش المواد الضعيفة بس - كل المواد!)
+   - 💡 نصائح لتحسين المواد الضعيفة
+   - 🎯 أهداف قصيرة المدى
+   - 🏆 أهداف طويلة المدى
+   - 💪 رسالة تحفيزية
+
+2. المهام (tasks) لازم تكون مهام يومية عملية لكل يوم من الـ 7 أيام الجاية.
+   - كل يوم يكون فيه 2-4 مهام على الأقل
+   - المهام تشمل كل المواد مش بس الضعيفة
+   - المواد الضعيفة تاخد وقت أكتر
+   - كل مهمة ليها تاريخ محدد من: ${daysInfo}
+   - الأولوية "high" للمواد الضعيفة و"medium" للباقي
+
+3. لو الطالب رفع صورة جدول مدرسي، حللها واستخرج المواد والأوقات واستخدمها في توزيع المهام.
+
+رد بـ JSON فقط بدون أي نص إضافي.`
+      : `You are a smart educational consultant. Create a personalized study plan.
+
+IMPORTANT: You MUST respond with JSON only in this format:
+{
+  "plan": "Full plan text in markdown",
+  "tasks": [
+    {
+      "title": "Task title",
+      "description": "Short description",
+      "due_date": "YYYY-MM-DD",
+      "priority": "high or medium or low"
+    }
+  ]
+}
+
+Rules:
+1. The plan (plan) should be in markdown and include:
+   - 📋 Situation Summary
+   - 📅 Detailed daily plan for each day (ALL subjects, not just weak ones!)
+   - 💡 Tips for Weak Subjects
+   - 🎯 Short-term Goals
+   - 🏆 Long-term Goals
+   - 💪 Motivational Message
+
+2. Tasks must be practical daily tasks for the next 7 days.
+   - Each day should have 2-4 tasks minimum
+   - Tasks cover ALL subjects, not just weak ones
+   - Weak subjects get more time
+   - Each task has a specific date from: ${daysInfo}
+   - Priority "high" for weak subjects, "medium" for others
+
+3. If the student uploaded a school schedule image, analyze it and use subjects/times to distribute tasks.
+
+Respond with JSON only, no extra text.`;
 
     let userContent: any;
     
     if (scheduleImageBase64) {
-      // Use vision model with image
       const textPart = language === 'ar'
         ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
 عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
 أهداف الطالب: ${goals || 'مش محدد'}
-
-الصورة المرفقة هي جدول المدرسة بتاع الطالب. حلل الصورة واستخرج المواد والأوقات واستخدمها في الخطة الدراسية.
-اعملي خطة دراسية مفصلة ومحفزة!`
+الصورة المرفقة هي جدول المدرسة. حلل الصورة واستخرج المواد والأوقات.`
         : `Weak subjects: ${weakSubjects || 'Not specified'}
 Study hours per day: ${studyHoursPerDay || 'Not specified'}
 Student goals: ${goals || 'Not specified'}
-
-The attached image is the student's school schedule. Analyze the image, extract subjects and times, and use them in the study plan.
-Create a detailed and motivating study plan!`;
+The attached image is the school schedule. Analyze it and extract subjects/times.`;
 
       userContent = [
         { type: 'text', text: textPart },
@@ -64,12 +123,10 @@ Create a detailed and motivating study plan!`;
       userContent = language === 'ar'
         ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
 عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
-أهداف الطالب: ${goals || 'مش محدد'}
-اعملي خطة دراسية مفصلة ومحفزة!`
+أهداف الطالب: ${goals || 'مش محدد'}`
         : `Weak subjects: ${weakSubjects || 'Not specified'}
 Study hours per day: ${studyHoursPerDay || 'Not specified'}
-Student goals: ${goals || 'Not specified'}
-Create a detailed and motivating study plan!`;
+Student goals: ${goals || 'Not specified'}`;
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -104,9 +161,25 @@ Create a detailed and motivating study plan!`;
     }
 
     const data = await response.json();
-    const plan = data.choices?.[0]?.message?.content || '';
+    const rawContent = data.choices?.[0]?.message?.content || '';
 
-    return new Response(JSON.stringify({ plan }), {
+    // Try to parse as JSON
+    let plan = '';
+    let tasks: any[] = [];
+    
+    try {
+      // Clean markdown code blocks if present
+      const cleaned = rawContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      plan = parsed.plan || rawContent;
+      tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    } catch {
+      // Fallback: use raw content as plan, no auto tasks
+      plan = rawContent;
+      tasks = [];
+    }
+
+    return new Response(JSON.stringify({ plan, tasks }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

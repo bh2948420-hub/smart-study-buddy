@@ -53,9 +53,11 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
   const [goals, setGoals] = useState('');
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [savingTasks, setSavingTasks] = useState(false);
   const [scheduleImage, setScheduleImage] = useState<string | null>(null);
   const [schedulePreview, setSchedulePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [autoTasksCount, setAutoTasksCount] = useState(0);
 
   const progress = ((step + 1) / STEPS) * 100;
 
@@ -102,6 +104,38 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const autoCreateTasks = async (tasks: any[]) => {
+    if (!tasks || tasks.length === 0) return 0;
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      const tasksToInsert = tasks.map((t: any) => ({
+        user_id: user.id,
+        title: t.title,
+        description: t.description || null,
+        due_date: new Date(t.due_date).toISOString(),
+        priority: ['high', 'medium', 'low'].includes(t.priority) ? t.priority : 'medium',
+        completed: false,
+      }));
+
+      const { error } = await supabase
+        .from('tasks')
+        .insert(tasksToInsert);
+
+      if (error) {
+        console.error('Error inserting tasks:', error);
+        return 0;
+      }
+
+      return tasksToInsert.length;
+    } catch (err) {
+      console.error('Error creating tasks:', err);
+      return 0;
+    }
+  };
+
   const generatePlan = async () => {
     setGenerating(true);
     try {
@@ -117,6 +151,15 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
 
       if (error) throw error;
       setGeneratedPlan(data.plan);
+
+      // Auto-create tasks from AI plan
+      if (data.tasks && data.tasks.length > 0) {
+        setSavingTasks(true);
+        const count = await autoCreateTasks(data.tasks);
+        setAutoTasksCount(count);
+        setSavingTasks(false);
+      }
+
       setStep(3);
     } catch (err) {
       console.error('Plan generation error:', err);
@@ -214,8 +257,8 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isAr 
-                      ? 'الـ AI هيحلل الصورة ويستخرج المواد والأوقات تلقائياً' 
-                      : 'AI will analyze the image and extract subjects & times automatically'}
+                      ? 'الـ AI هيحلل الصورة ويستخرج المواد والأوقات ويوزع المهام تلقائياً' 
+                      : 'AI will analyze the image, extract subjects & times, and auto-create tasks'}
                   </p>
 
                   {schedulePreview ? (
@@ -356,7 +399,32 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
                   {isAr ? '🎉 خطتك الدراسية جاهزة!' : '🎉 Your Study Plan is Ready!'}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Auto tasks notification */}
+                {autoTasksCount > 0 && (
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-center">
+                    <p className="text-sm font-medium text-primary">
+                      {isAr 
+                        ? `✅ تم إضافة ${autoTasksCount} مهمة تلقائياً في قائمة مهامك!`
+                        : `✅ ${autoTasksCount} tasks were automatically added to your task list!`}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isAr 
+                        ? 'هتلاقيهم في الداشبورد جاهزين ليك'
+                        : 'You\'ll find them ready in your dashboard'}
+                    </p>
+                  </div>
+                )}
+
+                {savingTasks && (
+                  <div className="flex items-center justify-center gap-2 p-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {isAr ? 'بيضيف المهام تلقائياً...' : 'Auto-creating tasks...'}
+                    </span>
+                  </div>
+                )}
+
                 <div className="bg-muted/50 rounded-xl p-4 max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
                   <ReactMarkdown>{generatedPlan}</ReactMarkdown>
                 </div>
@@ -377,7 +445,7 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
 
             <Button
               onClick={handleNext}
-              disabled={!canGoNext() || generating}
+              disabled={!canGoNext() || generating || savingTasks}
               className="min-w-[140px] gap-2"
             >
               {generating ? (
