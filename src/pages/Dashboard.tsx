@@ -33,6 +33,7 @@ import {
 import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
