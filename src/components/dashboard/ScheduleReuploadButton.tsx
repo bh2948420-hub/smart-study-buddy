@@ -84,8 +84,18 @@ export const ScheduleReuploadButton = ({ onTasksCreated }: ScheduleReuploadButto
         }
       }
 
+      // Save plan to database
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        await supabase.from('study_plans').insert({
+          user_id: currentUser.id,
+          plan_markdown: data.plan,
+          schedule_image_used: true,
+        } as any);
+      }
+
       setResult({ plan: data.plan, tasksCount });
-      toast.success(isAr 
+      toast.success(isAr
         ? `✅ تم تحديث الجدول وإضافة ${tasksCount} مهمة جديدة!` 
         : `✅ Schedule updated with ${tasksCount} new tasks!`);
       onTasksCreated?.();
