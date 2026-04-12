@@ -34,6 +34,8 @@ import { toast } from 'sonner';
 import { isSameDay } from 'date-fns';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
+import { TodayStudyPlan } from '@/components/dashboard/TodayStudyPlan';
+import { StudyHeatmap } from '@/components/dashboard/StudyHeatmap';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
@@ -201,6 +203,12 @@ const Dashboard = () => {
           streakDays={stats.streakDays}
           averageScore={stats.averageScore}
         />
+
+        {/* Study Heatmap */}
+        <StudyHeatmap />
+
+        {/* Study Plan */}
+        <TodayStudyPlan />
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content - Study Planner */}

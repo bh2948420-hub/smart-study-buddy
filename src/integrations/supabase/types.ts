@@ -534,6 +534,42 @@ export type Database = {
         }
         Relationships: []
       }
+      study_plans: {
+        Row: {
+          created_at: string
+          goals: string | null
+          id: string
+          plan_markdown: string
+          schedule_image_used: boolean | null
+          study_hours: string | null
+          updated_at: string
+          user_id: string
+          weak_subjects: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          goals?: string | null
+          id?: string
+          plan_markdown: string
+          schedule_image_used?: boolean | null
+          study_hours?: string | null
+          updated_at?: string
+          user_id: string
+          weak_subjects?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          goals?: string | null
+          id?: string
+          plan_markdown?: string
+          schedule_image_used?: boolean | null
+          study_hours?: string | null
+          updated_at?: string
+          user_id?: string
+          weak_subjects?: string[] | null
+        }
+        Relationships: []
+      }
       study_schedule: {
         Row: {
           classroom: string | null

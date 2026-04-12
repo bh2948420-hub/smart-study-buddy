@@ -152,6 +152,19 @@ export const OnboardingWizard = ({ onComplete }: OnboardingWizardProps) => {
       if (error) throw error;
       setGeneratedPlan(data.plan);
 
+      // Save plan to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('study_plans').insert({
+          user_id: user.id,
+          plan_markdown: data.plan,
+          weak_subjects: weakSubjects,
+          study_hours: studyHours,
+          goals: goals || null,
+          schedule_image_used: !!scheduleImage,
+        } as any);
+      }
+
       // Auto-create tasks from AI plan
       if (data.tasks && data.tasks.length > 0) {
         setSavingTasks(true);
