@@ -35,7 +35,9 @@ import { isSameDay } from 'date-fns';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
 import { TodayStudyPlan } from '@/components/dashboard/TodayStudyPlan';
+import { TodayStudyPlan } from '@/components/dashboard/TodayStudyPlan';
 import { StudyHeatmap } from '@/components/dashboard/StudyHeatmap';
+import { AIPerformancePredictor } from '@/components/dashboard/AIPerformancePredictor';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
@@ -263,6 +265,9 @@ const Dashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* AI Performance Predictor */}
+            <AIPerformancePredictor />
+
             {/* Streak Winners */}
             <StreakWinnersPanel />
 
