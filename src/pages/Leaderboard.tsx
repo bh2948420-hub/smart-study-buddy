@@ -263,7 +263,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-background" dir={dir}>
       <Navbar />
-      <RankCelebration currentRank={actualUserRank} userId={currentUserId} />
+      <RankCelebration />
       <main className="container py-8 space-y-8">
         {/* Header */}
         <div className="text-center">

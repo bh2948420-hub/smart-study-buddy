@@ -35,8 +35,10 @@ import { isSameDay } from 'date-fns';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
 import { TodayStudyPlan } from '@/components/dashboard/TodayStudyPlan';
-import { StudyHeatmap } from '@/components/dashboard/StudyHeatmap';
+import { SubjectMasteryRadar } from '@/components/dashboard/SubjectMasteryRadar';
 import { AIPerformancePredictor } from '@/components/dashboard/AIPerformancePredictor';
+import { RankCelebration } from '@/components/celebrations/RankCelebration';
+import { StreakBadges } from '@/components/streak/StreakBadges';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
