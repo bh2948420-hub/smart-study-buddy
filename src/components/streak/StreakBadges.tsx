@@ -1,142 +1,83 @@
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAchievements } from '@/hooks/useAchievements';
-import { useStats } from '@/hooks/useStats';
-import { cn } from '@/lib/utils';
-import { Flame, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Award } from 'lucide-react';
 
-interface StreakMilestone {
-  days: number;
-  icon: string;
-  name: string;
-  name_ar: string;
-  color: string;
-}
-
-const STREAK_MILESTONES: StreakMilestone[] = [
-  { days: 7, icon: '🔥', name: 'Week Warrior', name_ar: 'محارب الأسبوع', color: 'from-orange-400 to-orange-600' },
-  { days: 30, icon: '👑', name: 'Month Master', name_ar: 'سيد الشهر', color: 'from-yellow-400 to-amber-600' },
-  { days: 100, icon: '🏅', name: 'Streak Legend', name_ar: 'أسطورة الالتزام', color: 'from-purple-400 to-purple-600' },
+const STREAK_BADGES = [
+  { days: 3, icon: '🔥', name: 'Spark', nameAr: 'شرارة', color: 'from-orange-300 to-orange-400' },
+  { days: 7, icon: '⚡', name: 'Week Warrior', nameAr: 'محارب الأسبوع', color: 'from-amber-400 to-amber-500' },
+  { days: 14, icon: '🌟', name: 'Consistent', nameAr: 'ثابت', color: 'from-yellow-400 to-yellow-500' },
+  { days: 21, icon: '💪', name: 'Dedicated', nameAr: 'مُلتزم', color: 'from-blue-400 to-blue-500' },
+  { days: 30, icon: '👑', name: 'Monthly King', nameAr: 'ملك الشهر', color: 'from-purple-400 to-purple-500' },
+  { days: 50, icon: '🏆', name: 'Champion', nameAr: 'بطل', color: 'from-emerald-400 to-emerald-500' },
+  { days: 100, icon: '💎', name: 'Diamond', nameAr: 'ماسي', color: 'from-cyan-400 to-cyan-500' },
+  { days: 365, icon: '🌍', name: 'Legendary', nameAr: 'أسطوري', color: 'from-red-400 to-red-500' },
 ];
 
 export const StreakBadges = () => {
   const { language } = useLanguage();
-  const { achievements, userAchievements, loading: achievementsLoading } = useAchievements();
-  const { stats, loading: statsLoading } = useStats();
+  const isAr = language === 'ar';
+  const [streakDays, setStreakDays] = useState(0);
 
-  if (achievementsLoading || statsLoading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </div>
-    );
-  }
-
-  const earnedAchievementIds = userAchievements.map(ua => ua.achievement_id);
-  
-  // Map streak milestones to their achievement status
-  const streakAchievements = STREAK_MILESTONES.map(milestone => {
-    const achievement = achievements.find(
-      a => a.requirement_type === 'streak_days' && a.requirement_value === milestone.days
-    );
-    const isEarned = achievement ? earnedAchievementIds.includes(achievement.id) : false;
-    const progress = Math.min(100, (stats.streakDays / milestone.days) * 100);
-    
-    return {
-      ...milestone,
-      achievement,
-      isEarned,
-      progress,
+  useEffect(() => {
+    const fetchStreak = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('streak_days')
+        .eq('user_id', user.id)
+        .single();
+      if (data) setStreakDays(data.streak_days || 0);
     };
-  });
-
-  const earnedCount = streakAchievements.filter(s => s.isEarned).length;
+    fetchStreak();
+  }, []);
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Flame className="h-5 w-5 text-orange-500" />
-        <h3 className="font-semibold">
-          {language === 'ar' ? 'شارات الالتزام' : 'Streak Badges'}
-        </h3>
-        <Badge variant="secondary" className="ml-auto">
-          {earnedCount}/{STREAK_MILESTONES.length}
-        </Badge>
-      </div>
-
-      <div className="flex flex-wrap gap-4 justify-center">
-        {streakAchievements.map((streak) => (
-          <div
-            key={streak.days}
-            className={cn(
-              'relative flex flex-col items-center p-4 rounded-xl transition-all duration-300',
-              streak.isEarned
-                ? 'bg-gradient-to-br ' + streak.color + ' text-white shadow-lg scale-100'
-                : 'bg-muted/50 opacity-50 grayscale'
-            )}
-          >
-            {/* Badge icon */}
-            <div className={cn(
-              'text-4xl mb-2',
-              streak.isEarned && 'animate-pulse'
-            )}>
-              {streak.icon}
-            </div>
-            
-            {/* Days badge */}
-            <div className={cn(
-              'text-lg font-bold',
-              streak.isEarned ? 'text-white' : 'text-muted-foreground'
-            )}>
-              {streak.days} {language === 'ar' ? 'يوم' : 'days'}
-            </div>
-            
-            {/* Name */}
-            <div className={cn(
-              'text-xs text-center mt-1',
-              streak.isEarned ? 'text-white/90' : 'text-muted-foreground'
-            )}>
-              {language === 'ar' ? streak.name_ar : streak.name}
-            </div>
-
-            {/* Progress indicator for unearned */}
-            {!streak.isEarned && (
-              <div className="mt-2 w-full">
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-orange-500 rounded-full transition-all duration-500"
-                    style={{ width: `${streak.progress}%` }}
-                  />
-                </div>
-                <div className="text-[10px] text-muted-foreground text-center mt-1">
-                  {stats.streakDays}/{streak.days}
-                </div>
-              </div>
-            )}
-
-            {/* Earned checkmark */}
-            {streak.isEarned && (
-              <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 shadow-md">
-                <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Current streak display */}
-      <div className="mt-4 pt-4 border-t text-center">
-        <div className="text-sm text-muted-foreground">
-          {language === 'ar' ? 'الالتزام الحالي' : 'Current Streak'}
+    <Card className="animate-fade-in">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Award className="h-5 w-5 text-amber-500" />
+          {isAr ? '🏅 شارات السلسلة' : '🏅 Streak Badges'}
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          {isAr ? `سلسلتك الحالية: ${streakDays} يوم` : `Current streak: ${streakDays} days`}
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-4 gap-3">
+          {STREAK_BADGES.map(badge => {
+            const earned = streakDays >= badge.days;
+            return (
+              <Tooltip key={badge.days}>
+                <TooltipTrigger asChild>
+                  <div className={`relative flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
+                    earned 
+                      ? `bg-gradient-to-br ${badge.color} shadow-lg` 
+                      : 'bg-muted/50 opacity-40 grayscale'
+                  }`}>
+                    <span className="text-2xl">{badge.icon}</span>
+                    <span className="text-[9px] font-bold text-center leading-tight">{badge.days}d</span>
+                    {earned && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-medium">{isAr ? badge.nameAr : badge.name}</p>
+                  <p className="text-xs">
+                    {earned 
+                      ? (isAr ? '✅ تم الحصول عليها!' : '✅ Earned!') 
+                      : (isAr ? `${badge.days - streakDays} يوم متبقي` : `${badge.days - streakDays} days to go`)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
-        <div className="text-2xl font-bold text-orange-500 flex items-center justify-center gap-1">
-          <Flame className="h-5 w-5" />
-          {stats.streakDays} {language === 'ar' ? 'يوم' : 'days'}
-        </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };
