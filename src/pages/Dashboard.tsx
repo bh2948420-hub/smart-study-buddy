@@ -207,9 +207,14 @@ const Dashboard = () => {
           averageScore={stats.averageScore}
         />
 
-        {/* Study Heatmap */}
-        <StudyHeatmap />
+        {/* Rank Celebration */}
+        <RankCelebration />
 
+        {/* Subject Mastery Radar */}
+        <SubjectMasteryRadar />
+
+        {/* Streak Badges */}
+        <StreakBadges />
         {/* Study Plan */}
         <TodayStudyPlan />
 
