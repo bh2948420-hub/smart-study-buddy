@@ -47,6 +47,8 @@ const Quizzes = () => {
   const [showResults, setShowResults] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [gradeDetails, setGradeDetails] = useState<Record<number, { correct: boolean; correct_answer: string; explanation: string | null }>>({});
+
 
   const subjects = ['رياضيات', 'فيزياء', 'كيمياء', 'أحياء', 'لغة عربية', 'إنجليزي', 'تاريخ', 'جغرافيا'];
 
@@ -185,18 +187,24 @@ const Quizzes = () => {
 
   const finishQuiz = async () => {
     if (!activeQuiz) return;
-    
+
     const timeSpent = quizStartTime ? Math.floor((Date.now() - quizStartTime) / 1000) : 0;
-    
+
     const answers = questions.map(q => ({
       question_id: q.id,
       answer: selectedAnswers[q.id] || '',
-      correct: selectedAnswers[q.id] === q.correct_answer
+      correct: false, // server will compute
     }));
 
-    await submitQuizResult(activeQuiz.id, answers, timeSpent);
+    const graded: any = await submitQuizResult(activeQuiz.id, answers, timeSpent);
+    const map: Record<number, { correct: boolean; correct_answer: string; explanation: string | null }> = {};
+    (graded?.details || []).forEach((d: any) => {
+      map[d.question_id] = { correct: !!d.correct, correct_answer: d.correct_answer ?? '', explanation: d.explanation ?? null };
+    });
+    setGradeDetails(map);
     setShowResults(true);
   };
+
 
   const closeQuiz = () => {
     setActiveQuiz(null);
