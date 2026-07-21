@@ -245,7 +245,7 @@ const Quizzes = () => {
     const answeredCount = Object.keys(selectedAnswers).length;
 
     if (showResults) {
-      const correctCount = questions.filter(q => selectedAnswers[q.id] === q.correct_answer).length;
+      const correctCount = questions.filter(q => gradeDetails[q.id]?.correct).length;
       const percentage = (correctCount / questions.length) * 100;
 
       return (
@@ -272,7 +272,8 @@ const Quizzes = () => {
 
                 <div className="space-y-4">
                   {questions.map((q, idx) => {
-                    const isCorrect = selectedAnswers[q.id] === q.correct_answer;
+                    const detail = gradeDetails[q.id];
+                    const isCorrect = !!detail?.correct;
                     return (
                       <div 
                         key={q.id} 
@@ -289,20 +290,21 @@ const Quizzes = () => {
                           )}
                           <div className="flex-1">
                             <p className="font-medium">{idx + 1}. {q.question_text}</p>
-                            {!isCorrect && (
+                            {!isCorrect && detail?.correct_answer && (
                               <p className="text-sm text-muted-foreground mt-1">
-                                {language === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} {q.correct_answer}
+                                {language === 'ar' ? 'الإجابة الصحيحة:' : 'Correct answer:'} {detail.correct_answer}
                               </p>
                             )}
-                            {q.explanation && (
+                            {detail?.explanation && (
                               <p className="text-sm text-muted-foreground mt-1 italic">
-                                {q.explanation}
+                                {detail.explanation}
                               </p>
                             )}
                           </div>
                         </div>
                       </div>
                     );
+
                   })}
                 </div>
               </CardContent>
