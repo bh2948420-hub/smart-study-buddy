@@ -307,6 +307,8 @@ const Quizzes = () => {
 
                   })}
                 </div>
+
+                <TransferQuestionCheck quizId={activeQuiz.id} originalPercentage={percentage} />
               </CardContent>
               <CardFooter>
                 <Button onClick={closeQuiz} className="w-full">
@@ -314,6 +316,7 @@ const Quizzes = () => {
                 </Button>
               </CardFooter>
             </Card>
+
           </main>
         </div>
       );
