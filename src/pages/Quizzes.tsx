@@ -21,6 +21,8 @@ import {
   FileText, Sparkles, Zap, Upload, FileUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TransferQuestionCheck } from '@/components/quizzes/TransferQuestionCheck';
+
 
 const Quizzes = () => {
   const { language, dir } = useLanguage();
@@ -307,6 +309,8 @@ const Quizzes = () => {
 
                   })}
                 </div>
+
+                <TransferQuestionCheck quizId={activeQuiz.id} originalPercentage={percentage} />
               </CardContent>
               <CardFooter>
                 <Button onClick={closeQuiz} className="w-full">
@@ -314,6 +318,7 @@ const Quizzes = () => {
                 </Button>
               </CardFooter>
             </Card>
+
           </main>
         </div>
       );

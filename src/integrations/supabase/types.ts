@@ -680,6 +680,56 @@ export type Database = {
         }
         Relationships: []
       }
+      transfer_question_attempts: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          explanation: string | null
+          id: string
+          is_correct: boolean | null
+          options: Json
+          question_text: string
+          quiz_id: number
+          topic: string | null
+          user_answer: string | null
+          user_id: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean | null
+          options: Json
+          question_text: string
+          quiz_id: number
+          topic?: string | null
+          user_answer?: string | null
+          user_id: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean | null
+          options?: Json
+          question_text?: string
+          quiz_id?: number
+          topic?: string | null
+          user_answer?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_question_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -881,6 +931,10 @@ export type Database = {
       }
       grade_quiz: {
         Args: { p_answers: Json; p_quiz_id: number; p_time_spent?: number }
+        Returns: Json
+      }
+      grade_transfer_question: {
+        Args: { p_answer: string; p_attempt_id: string }
         Returns: Json
       }
       submit_challenge_answer: {
