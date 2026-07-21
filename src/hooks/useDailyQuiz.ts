@@ -54,14 +54,13 @@ export const useDailyQuiz = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get random 5 questions from user's quizzes
+      // Get random 5 questions from user's quizzes (correct_answer stays server-side)
       const { data: quizQuestions, error } = await supabase
         .from('quiz_questions')
         .select(`
           id,
           question_text,
           options,
-          correct_answer,
           quizzes!inner(user_id, subject)
         `)
         .eq('quizzes.user_id', user.id)
@@ -80,7 +79,7 @@ export const useDailyQuiz = () => {
         id: q.id,
         question_text: q.question_text,
         options: Array.isArray(q.options) ? q.options : [],
-        correct_answer: q.correct_answer,
+        correct_answer: '', // not exposed until after grading
         subject: q.quizzes?.subject || null,
       }));
 
@@ -93,69 +92,54 @@ export const useDailyQuiz = () => {
   }, []);
 
   const submitDailyQuiz = async (
-    score: number, 
-    totalQuestions: number, 
-    timeSpentSeconds: number
+    _clientScore: number,
+    _totalQuestions: number,
+    timeSpentSeconds: number,
+    questionIds?: number[],
+    answers?: string[]
   ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Calculate XP based on performance (10-50 XP)
-      const percentage = (score / totalQuestions) * 100;
-      let xpEarned = 10; // Base XP for attempting
-      if (percentage >= 80) xpEarned = 50;
-      else if (percentage >= 60) xpEarned = 35;
-      else if (percentage >= 40) xpEarned = 25;
-      else xpEarned = 15;
+      if (!questionIds || !answers) {
+        console.error('submitDailyQuiz requires questionIds and answers arrays');
+        return null;
+      }
 
-      const today = new Date().toISOString().split('T')[0];
-
-      const { data, error } = await supabase
-        .from('daily_quiz_attempts')
-        .insert({
-          user_id: user.id,
-          quiz_date: today,
-          score,
-          total_questions: totalQuestions,
-          time_spent_seconds: timeSpentSeconds,
-          xp_earned: xpEarned,
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('submit_daily_quiz', {
+        p_question_ids: questionIds,
+        p_answers: answers,
+        p_time_spent: timeSpentSeconds,
+      });
 
       if (error) throw error;
 
-      // Update user XP
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('xp_points')
-        .eq('user_id', user.id)
-        .single();
+      const result = data as any;
+      const attempt = {
+        id: result.attempt_id,
+        user_id: user.id,
+        quiz_date: new Date().toISOString().split('T')[0],
+        score: result.score,
+        total_questions: result.total,
+        time_spent_seconds: timeSpentSeconds,
+        xp_earned: result.xp_earned,
+      } as DailyQuizAttempt;
 
-      const currentXP = profile?.xp_points || 0;
-      
-      await supabase
-        .from('user_profiles')
-        .update({ 
-          xp_points: currentXP + xpEarned,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-
-      setTodayAttempt(data);
+      setTodayAttempt(attempt);
 
       toast({
-        title: `${score}/${totalQuestions} Correct! 🎯`,
-        description: `You earned ${xpEarned} bonus XP!`,
+        title: `${result.score}/${result.total} Correct! 🎯`,
+        description: `You earned ${result.xp_earned} bonus XP!`,
       });
 
-      return data;
+      return result;
     } catch (error) {
       console.error('Error submitting daily quiz:', error);
       return null;
     }
   };
+
 
   useEffect(() => {
     const init = async () => {

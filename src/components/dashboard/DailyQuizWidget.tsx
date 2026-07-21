@@ -20,7 +20,9 @@ export const DailyQuizWidget = () => {
   const [timeLeft, setTimeLeft] = useState(QUIZ_TIME_LIMIT);
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
+  const [correctness, setCorrectness] = useState<Record<number, boolean>>({});
   const startTimeRef = useRef<number>(0);
+
 
   // Timer effect
   useEffect(() => {
@@ -59,20 +61,23 @@ export const DailyQuizWidget = () => {
 
   const handleSubmit = async () => {
     const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+    const questionIds = questions.map((q) => q.id);
+    const answerArr = questions.map((_, idx) => answers[idx] ?? '');
+
+    const result: any = await submitDailyQuiz(0, questions.length, timeSpent, questionIds, answerArr);
+
+    const map: Record<number, boolean> = {};
     let correctCount = 0;
-
-    questions.forEach((q, idx) => {
-      if (answers[idx] === q.correct_answer) {
-        correctCount++;
-      }
+    (result?.details || []).forEach((d: any, i: number) => {
+      map[i] = !!d.correct;
+      if (d.correct) correctCount++;
     });
-
-    setScore(correctCount);
+    setCorrectness(map);
+    setScore(result?.score ?? correctCount);
     setShowResults(true);
     setIsPlaying(false);
-
-    await submitDailyQuiz(correctCount, questions.length, timeSpent);
   };
+
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -201,7 +206,7 @@ export const DailyQuizWidget = () => {
           {/* Review answers */}
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {questions.map((q, idx) => {
-              const isCorrect = answers[idx] === q.correct_answer;
+              const isCorrect = correctness[idx] ?? false;
               return (
                 <div 
                   key={idx}

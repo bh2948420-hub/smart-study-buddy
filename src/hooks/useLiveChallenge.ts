@@ -64,12 +64,13 @@ export const useLiveChallenge = () => {
         .eq('user_id', userId)
         .single();
 
-      // Get quiz questions
+      // Get quiz questions (correct_answer stays server-side)
       const { data: qs } = await supabase
         .from('quiz_questions')
-        .select('*')
+        .select('id, question_text, options, order_index')
         .eq('quiz_id', quizId)
         .order('order_index');
+
 
       if (!qs || qs.length === 0) {
         toast.error('No questions in this quiz');
@@ -91,7 +92,8 @@ export const useLiveChallenge = () => {
 
       if (error) throw error;
       setRoom(data);
-      setQuestions(qs);
+      setQuestions(qs as any);
+
       return data;
     } catch (err: any) {
       toast.error(err.message);
@@ -145,15 +147,16 @@ export const useLiveChallenge = () => {
 
       if (error) throw error;
 
-      // Fetch questions
+      // Fetch questions (correct_answer stays server-side)
       if (data.quiz_id) {
         const { data: qs } = await supabase
           .from('quiz_questions')
-          .select('*')
+          .select('id, question_text, options, order_index')
           .eq('quiz_id', data.quiz_id)
           .order('order_index');
-        setQuestions(qs || []);
+        setQuestions((qs || []) as any);
       }
+
 
       setRoom(data);
       return data;
@@ -165,36 +168,24 @@ export const useLiveChallenge = () => {
     }
   }, [userId]);
 
-  // Submit answer
+  // Submit answer (server grades and updates score)
   const submitAnswer = useCallback(async (answer: string) => {
     if (!room || !userId) return;
 
     const question = questions[currentIndex];
     if (!question) return;
 
-    const isCorrect = answer === question.correct_answer;
-
-    // Save locally
+    // Save locally (optimistic UI)
     setMyAnswers(prev => ({ ...prev, [currentIndex]: answer }));
 
-    // Save to DB
-    await supabase.from('challenge_room_answers').insert({
-      room_id: room.id,
-      user_id: userId,
-      question_index: currentIndex,
-      answer,
-      is_correct: isCorrect,
+    // Server-side grading + score update
+    await supabase.rpc('submit_challenge_answer', {
+      p_room_id: room.id,
+      p_question_index: currentIndex,
+      p_answer: answer,
     });
-
-    // Update score
-    if (isCorrect) {
-      const scoreField = room.host_user_id === userId ? 'host_score' : 'guest_score';
-      await supabase
-        .from('challenge_rooms')
-        .update({ [scoreField]: (room.host_user_id === userId ? room.host_score : room.guest_score) + 1 })
-        .eq('id', room.id);
-    }
   }, [room, userId, currentIndex, questions]);
+
 
   // Move to next question
   const nextQuestion = useCallback(async () => {

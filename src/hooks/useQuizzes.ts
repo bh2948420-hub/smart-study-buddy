@@ -85,18 +85,26 @@ export const useQuizzes = () => {
 
       const { data: questions, error: questionsError } = await supabase
         .from('quiz_questions')
-        .select('*')
+        .select('id, quiz_id, question_type, question_text, options, order_index')
         .eq('quiz_id', quizId)
         .order('order_index');
 
       if (questionsError) throw questionsError;
 
-      return { quiz, questions: questions || [] };
+      // correct_answer/explanation are not exposed to the client; filled in after grading
+      const safeQuestions = (questions || []).map((q: any) => ({
+        ...q,
+        correct_answer: '',
+        explanation: null,
+      }));
+
+      return { quiz, questions: safeQuestions };
     } catch (error) {
       console.error('Error fetching quiz:', error);
       return null;
     }
   };
+
 
   const generateQuiz = async (
     content: string,
@@ -186,25 +194,22 @@ export const useQuizzes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const score = answers.filter(a => a.correct).length;
-      const totalQuestions = answers.length;
-      const percentage = (score / totalQuestions) * 100;
+      // Build answer map for server-side grading
+      const answerMap: Record<string, string> = {};
+      answers.forEach(a => { answerMap[String(a.question_id)] = a.answer; });
 
-      const { data, error } = await supabase
-        .from('quiz_results')
-        .insert({
-          user_id: user.id,
-          quiz_id: quizId,
-          score,
-          total_questions: totalQuestions,
-          percentage,
-          answers,
-          time_spent_seconds: timeSpentSeconds || null
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('grade_quiz', {
+        p_quiz_id: quizId,
+        p_answers: answerMap,
+        p_time_spent: timeSpentSeconds || null,
+      });
 
       if (error) throw error;
+
+      const graded = data as any;
+      const score = graded?.score ?? 0;
+      const total = graded?.total ?? answers.length;
+      const percentage = graded?.percentage ?? 0;
 
       // Celebrate perfect score
       if (percentage === 100) {
@@ -213,10 +218,10 @@ export const useQuizzes = () => {
 
       toast({
         title: 'تم حفظ النتيجة',
-        description: `حصلت على ${score} من ${totalQuestions} (${percentage.toFixed(0)}%)`,
+        description: `حصلت على ${score} من ${total} (${Number(percentage).toFixed(0)}%)`,
       });
 
-      return data;
+      return graded;
     } catch (error) {
       console.error('Error submitting result:', error);
       toast({
@@ -227,6 +232,7 @@ export const useQuizzes = () => {
       throw error;
     }
   };
+
 
   const fetchQuizResults = async (quizId?: number) => {
     try {
