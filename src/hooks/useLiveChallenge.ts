@@ -92,7 +92,8 @@ export const useLiveChallenge = () => {
 
       if (error) throw error;
       setRoom(data);
-      setQuestions(qs);
+      setQuestions(qs as any);
+
       return data;
     } catch (err: any) {
       toast.error(err.message);
