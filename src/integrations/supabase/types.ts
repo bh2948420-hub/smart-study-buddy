@@ -879,6 +879,22 @@ export type Database = {
           xp_points: number
         }[]
       }
+      grade_quiz: {
+        Args: { p_answers: Json; p_quiz_id: number; p_time_spent?: number }
+        Returns: Json
+      }
+      submit_challenge_answer: {
+        Args: { p_answer: string; p_question_index: number; p_room_id: string }
+        Returns: Json
+      }
+      submit_daily_quiz: {
+        Args: {
+          p_answers: string[]
+          p_question_ids: number[]
+          p_time_spent?: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
