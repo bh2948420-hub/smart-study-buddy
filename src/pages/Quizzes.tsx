@@ -21,6 +21,8 @@ import {
   FileText, Sparkles, Zap, Upload, FileUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TransferQuestionCheck } from '@/components/quizzes/TransferQuestionCheck';
+
 
 const Quizzes = () => {
   const { language, dir } = useLanguage();
