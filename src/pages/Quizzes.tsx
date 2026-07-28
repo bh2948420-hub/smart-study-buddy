@@ -145,7 +145,8 @@ const Quizzes = () => {
         newQuizSubject,
         newQuizDifficulty,
         undefined,
-        parseInt(questionCount)
+        parseInt(questionCount),
+        quizLanguage
       );
       setShowCreateDialog(false);
       setNewQuizTitle('');
