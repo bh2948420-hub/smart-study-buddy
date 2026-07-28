@@ -7,6 +7,7 @@ import { useStudySessions } from '@/hooks/useStudySessions';
 import { useTasks } from '@/hooks/useTasks';
 import { useQuizzes } from '@/hooks/useQuizzes';
 import { supabase } from '@/integrations/supabase/client';
+import { StudentReportExport } from '@/components/reports/StudentReportExport';
 import { BarChart3, Clock, CheckCircle, Trophy, TrendingUp, Calendar, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
@@ -102,16 +103,19 @@ const Reports = () => {
     <div className="min-h-screen bg-background" dir={dir}>
       <Navbar />
       <main className="container py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <BarChart3 className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">
-              {language === 'ar' ? 'التقارير والإحصائيات' : 'Reports & Statistics'}
-            </h1>
-            <p className="text-muted-foreground">
-              {language === 'ar' ? 'تتبع تقدمك وإنجازاتك' : 'Track your progress and achievements'}
-            </p>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <BarChart3 className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold">
+                {language === 'ar' ? 'التقارير والإحصائيات' : 'Reports & Statistics'}
+              </h1>
+              <p className="text-muted-foreground">
+                {language === 'ar' ? 'تتبع تقدمك وإنجازاتك' : 'Track your progress and achievements'}
+              </p>
+            </div>
           </div>
+          <StudentReportExport />
         </div>
 
         {/* Summary Stats */}
