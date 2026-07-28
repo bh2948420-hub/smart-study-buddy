@@ -38,6 +38,7 @@ const Quizzes = () => {
   const [newQuizContent, setNewQuizContent] = useState('');
   const [newQuizDifficulty, setNewQuizDifficulty] = useState('medium');
   const [questionCount, setQuestionCount] = useState('5');
+  const [quizLanguage, setQuizLanguage] = useState<'auto' | 'ar' | 'en'>('auto');
   const [generatingFromMaterial, setGeneratingFromMaterial] = useState<number | null>(null);
   const [uploadingAndGenerating, setUploadingAndGenerating] = useState(false);
   const [uploadSubject, setUploadSubject] = useState('');
@@ -93,7 +94,8 @@ const Quizzes = () => {
         material.subject || '',
         'medium',
         material.id,
-        5
+        5,
+        quizLanguage
       );
 
       // Auto-start the quiz
@@ -143,7 +145,8 @@ const Quizzes = () => {
         newQuizSubject,
         newQuizDifficulty,
         undefined,
-        parseInt(questionCount)
+        parseInt(questionCount),
+        quizLanguage
       );
       setShowCreateDialog(false);
       setNewQuizTitle('');
@@ -469,19 +472,37 @@ const Quizzes = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'عدد الأسئلة' : 'Number of Questions'}</Label>
-                  <Select value={questionCount} onValueChange={setQuestionCount}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="15">15</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'عدد الأسئلة' : 'Number of Questions'}</Label>
+                    <Select value={questionCount} onValueChange={setQuestionCount}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'لغة الاختبار' : 'Quiz Language'}</Label>
+                    <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as 'auto' | 'ar' | 'en')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">
+                          {language === 'ar' ? 'تلقائي (حسب المادة)' : 'Auto (match material)'}
+                        </SelectItem>
+                        <SelectItem value="ar">{language === 'ar' ? 'عربي' : 'Arabic'}</SelectItem>
+                        <SelectItem value="en">{language === 'ar' ? 'إنجليزي' : 'English'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -547,6 +568,20 @@ const Quizzes = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as 'auto' | 'ar' | 'en')}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      {language === 'ar' ? 'لغة تلقائية' : 'Auto language'}
+                    </SelectItem>
+                    <SelectItem value="ar">{language === 'ar' ? 'اختبار بالعربي' : 'Arabic quiz'}</SelectItem>
+                    <SelectItem value="en">{language === 'ar' ? 'اختبار بالإنجليزي' : 'English quiz'}</SelectItem>
+                  </SelectContent>
+                </Select>
+
 
                 <label className="flex-1 w-full">
                   <input
