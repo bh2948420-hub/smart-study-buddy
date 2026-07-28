@@ -142,7 +142,9 @@ export const useQuizzes = () => {
           title,
           subject,
           difficulty,
-          description: `اختبار مولد تلقائياً يحتوي على ${generatedData.questions.length} سؤال`
+          description: quizLang === 'en'
+            ? `AI-generated quiz with ${generatedData.questions.length} professional questions`
+            : `اختبار مولد تلقائياً يحتوي على ${generatedData.questions.length} سؤال`
         })
         .select()
         .single();
@@ -154,7 +156,7 @@ export const useQuizzes = () => {
         quiz_id: quiz.id,
         question_type: q.question_type,
         question_text: q.question_text,
-        options: q.options || (q.question_type === 'true_false' ? ['صحيح', 'خطأ'] : null),
+        options: q.options || (q.question_type === 'true_false' ? (quizLang === 'en' ? ['True', 'False'] : ['صحيح', 'خطأ']) : null),
         correct_answer: q.correct_answer,
         explanation: q.explanation || null,
         order_index: index
