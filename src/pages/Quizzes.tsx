@@ -472,19 +472,37 @@ const Quizzes = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'عدد الأسئلة' : 'Number of Questions'}</Label>
-                  <Select value={questionCount} onValueChange={setQuestionCount}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="15">15</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'عدد الأسئلة' : 'Number of Questions'}</Label>
+                    <Select value={questionCount} onValueChange={setQuestionCount}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'لغة الاختبار' : 'Quiz Language'}</Label>
+                    <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as 'auto' | 'ar' | 'en')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">
+                          {language === 'ar' ? 'تلقائي (حسب المادة)' : 'Auto (match material)'}
+                        </SelectItem>
+                        <SelectItem value="ar">{language === 'ar' ? 'عربي' : 'Arabic'}</SelectItem>
+                        <SelectItem value="en">{language === 'ar' ? 'إنجليزي' : 'English'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
