@@ -569,6 +569,20 @@ const Quizzes = () => {
                   </SelectContent>
                 </Select>
 
+                <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as 'auto' | 'ar' | 'en')}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      {language === 'ar' ? 'لغة تلقائية' : 'Auto language'}
+                    </SelectItem>
+                    <SelectItem value="ar">{language === 'ar' ? 'اختبار بالعربي' : 'Arabic quiz'}</SelectItem>
+                    <SelectItem value="en">{language === 'ar' ? 'اختبار بالإنجليزي' : 'English quiz'}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+
                 <label className="flex-1 w-full">
                   <input
                     type="file"
