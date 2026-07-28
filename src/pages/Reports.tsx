@@ -7,6 +7,7 @@ import { useStudySessions } from '@/hooks/useStudySessions';
 import { useTasks } from '@/hooks/useTasks';
 import { useQuizzes } from '@/hooks/useQuizzes';
 import { supabase } from '@/integrations/supabase/client';
+import { StudentReportExport } from '@/components/reports/StudentReportExport';
 import { BarChart3, Clock, CheckCircle, Trophy, TrendingUp, Calendar, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
