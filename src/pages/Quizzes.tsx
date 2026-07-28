@@ -94,7 +94,8 @@ const Quizzes = () => {
         material.subject || '',
         'medium',
         material.id,
-        5
+        5,
+        quizLanguage
       );
 
       // Auto-start the quiz
