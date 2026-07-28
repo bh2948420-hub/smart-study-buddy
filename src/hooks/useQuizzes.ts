@@ -112,7 +112,8 @@ export const useQuizzes = () => {
     subject: string,
     difficulty: string = 'medium',
     materialId?: number,
-    questionCount: number = 10 // Default to 10 questions as requested
+    questionCount: number = 10, // Default to 10 questions as requested
+    language: 'auto' | 'ar' | 'en' = 'auto' // 'auto' = follow the material's own language
   ) => {
     setGenerating(true);
     try {
@@ -121,15 +122,16 @@ export const useQuizzes = () => {
 
       // Call AI to generate questions
       const response = await supabase.functions.invoke('generate-quiz', {
-        body: { content, title, subject, difficulty, questionCount }
+        body: { content, title, subject, difficulty, questionCount, language }
       });
 
       if (response.error) throw response.error;
       
-      const generatedData = response.data as { questions: GeneratedQuestion[] };
+      const generatedData = response.data as { questions: GeneratedQuestion[]; language?: 'ar' | 'en' };
       if (!generatedData?.questions?.length) {
         throw new Error('Failed to generate questions');
       }
+      const quizLang = generatedData.language || 'ar';
 
       // Create quiz in database
       const { data: quiz, error: quizError } = await supabase
