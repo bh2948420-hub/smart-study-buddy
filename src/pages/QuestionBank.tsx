@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank';
+import { SmartExamBuilder } from '@/components/questionbank/SmartExamBuilder';
+
 import { Library, Star, Trash2, Search, FileQuestion, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -100,6 +102,17 @@ export default function QuestionBank() {
     }
   };
 
+  const handleSmartGenerate = async (t2: string, subj: string | null, ids: string[]) => {
+    try {
+      const quizId = await createQuizFromBank(t2, subj, ids);
+      toast.success(t.created);
+      navigate('/quizzes', { state: { openQuizId: quizId } });
+    } catch {
+      /* handled in hook */
+    }
+  };
+
+
   const difficultyLabel = (d: string) =>
     d === 'easy' ? (language === 'ar' ? 'سهل' : 'Easy')
       : d === 'hard' ? (language === 'ar' ? 'صعب' : 'Hard')
@@ -171,9 +184,15 @@ export default function QuestionBank() {
               <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
                 {t.clear}
               </Button>
+              <SmartExamBuilder
+                questions={questions}
+                creating={creating}
+                onGenerate={handleSmartGenerate}
+              />
               <span className="text-sm text-muted-foreground ltr:ml-auto rtl:mr-auto">
                 {t.selectedCount(selected.length)}
               </span>
+
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button disabled={selected.length === 0}>
