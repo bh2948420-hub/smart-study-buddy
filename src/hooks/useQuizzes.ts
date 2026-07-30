@@ -44,7 +44,10 @@ interface GeneratedQuestion {
   options?: string[];
   correct_answer: string;
   explanation?: string;
+  topic?: string;
+  skill?: string;
 }
+
 
 export const useQuizzes = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -168,7 +171,28 @@ export const useQuizzes = () => {
 
       if (questionsError) throw questionsError;
 
+      // Archive the generated questions in the reusable question bank
+      const bankRows = generatedData.questions.map((q) => ({
+        user_id: user.id,
+        source_quiz_id: quiz.id,
+        material_id: materialId || null,
+        subject: subject || null,
+        topic: q.topic || null,
+        skill: q.skill || null,
+        difficulty,
+        quiz_language: quizLang,
+        question_type: q.question_type,
+        question_text: q.question_text,
+        options: q.options || (q.question_type === 'true_false' ? (quizLang === 'en' ? ['True', 'False'] : ['صحيح', 'خطأ']) : null),
+        correct_answer: q.correct_answer,
+        explanation: q.explanation || null,
+      }));
+
+      const { error: bankError } = await supabase.from('question_bank').insert(bankRows);
+      if (bankError) console.error('Question bank save failed:', bankError);
+
       setQuizzes(prev => [quiz, ...prev]);
+
       
       toast({
         title: 'تم إنشاء الاختبار',
