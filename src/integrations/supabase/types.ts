@@ -306,6 +306,77 @@ export type Database = {
         }
         Relationships: []
       }
+      question_bank: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          difficulty: string
+          explanation: string | null
+          id: string
+          is_favorite: boolean
+          material_id: number | null
+          options: Json | null
+          question_text: string
+          question_type: string
+          quiz_language: string
+          skill: string | null
+          source_quiz_id: number | null
+          subject: string | null
+          times_used: number
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_favorite?: boolean
+          material_id?: number | null
+          options?: Json | null
+          question_text: string
+          question_type?: string
+          quiz_language?: string
+          skill?: string | null
+          source_quiz_id?: number | null
+          subject?: string | null
+          times_used?: number
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_favorite?: boolean
+          material_id?: number | null
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          quiz_language?: string
+          skill?: string | null
+          source_quiz_id?: number | null
+          subject?: string | null
+          times_used?: number
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_bank_source_quiz_id_fkey"
+            columns: ["source_quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_questions: {
         Row: {
           correct_answer: string
@@ -916,6 +987,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_quiz_from_bank: {
+        Args: { p_question_ids: string[]; p_subject: string; p_title: string }
+        Returns: number
+      }
       get_leaderboard: {
         Args: { limit_count?: number; time_filter?: string }
         Returns: {
