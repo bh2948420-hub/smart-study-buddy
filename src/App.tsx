@@ -11,6 +11,8 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Materials from "./pages/Materials";
 import Quizzes from "./pages/Quizzes";
+import QuestionBank from "./pages/QuestionBank";
+
 import UploadSchedule from "./pages/UploadSchedule";
 import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
