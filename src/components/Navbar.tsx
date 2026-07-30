@@ -17,6 +17,8 @@ export function Navbar() {
     { to: '/chat', label: t('chat') },
     { to: '/materials', label: language === 'ar' ? 'المواد' : 'Materials' },
     { to: '/quizzes', label: language === 'ar' ? 'الاختبارات' : 'Quizzes' },
+    { to: '/question-bank', label: language === 'ar' ? 'بنك الأسئلة' : 'Question Bank', icon: Library },
+
     { to: '/leaderboard', label: language === 'ar' ? 'المتصدرين' : 'Leaderboard', icon: Trophy },
     { to: '/challenge', label: language === 'ar' ? 'تحدي مباشر' : 'Live Battle', icon: Swords },
     { to: '/insights', label: language === 'ar' ? 'التحليلات' : 'Insights', icon: Brain },
