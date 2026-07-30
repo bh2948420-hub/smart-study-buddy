@@ -182,9 +182,15 @@ export default function QuestionBank() {
               <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
                 {t.clear}
               </Button>
+              <SmartExamBuilder
+                questions={questions}
+                creating={creating}
+                onGenerate={handleSmartGenerate}
+              />
               <span className="text-sm text-muted-foreground ltr:ml-auto rtl:mr-auto">
                 {t.selectedCount(selected.length)}
               </span>
+
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button disabled={selected.length === 0}>
