@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank';
+import { SmartExamBuilder } from '@/components/questionbank/SmartExamBuilder';
+
 import { Library, Star, Trash2, Search, FileQuestion, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
