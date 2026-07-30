@@ -44,7 +44,10 @@ interface GeneratedQuestion {
   options?: string[];
   correct_answer: string;
   explanation?: string;
+  topic?: string;
+  skill?: string;
 }
+
 
 export const useQuizzes = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
