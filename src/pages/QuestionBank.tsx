@@ -100,6 +100,17 @@ export default function QuestionBank() {
     }
   };
 
+  const handleSmartGenerate = async (t2: string, subj: string | null, ids: string[]) => {
+    try {
+      const quizId = await createQuizFromBank(t2, subj, ids);
+      toast.success(t.created);
+      navigate('/quizzes', { state: { openQuizId: quizId } });
+    } catch {
+      /* handled in hook */
+    }
+  };
+
+
   const difficultyLabel = (d: string) =>
     d === 'easy' ? (language === 'ar' ? 'سهل' : 'Easy')
       : d === 'hard' ? (language === 'ar' ? 'صعب' : 'Hard')
