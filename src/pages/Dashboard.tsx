@@ -39,6 +39,7 @@ import { SubjectMasteryRadar } from '@/components/dashboard/SubjectMasteryRadar'
 import { AIPerformancePredictor } from '@/components/dashboard/AIPerformancePredictor';
 import { RankCelebration } from '@/components/celebrations/RankCelebration';
 import { StreakBadges } from '@/components/streak/StreakBadges';
+import { SmartDailyChallenge } from '@/components/dashboard/SmartDailyChallenge';
 
 const Dashboard = () => {
   const { t, dir, language } = useLanguage();
@@ -207,8 +208,12 @@ const Dashboard = () => {
           averageScore={stats.averageScore}
         />
 
+        {/* Smart Daily Challenge */}
+        <SmartDailyChallenge />
+
         {/* Rank Celebration */}
         <RankCelebration />
+
 
         {/* Subject Mastery Radar */}
         <SubjectMasteryRadar />

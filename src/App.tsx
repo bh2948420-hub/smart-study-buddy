@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Materials from "./pages/Materials";
 import Quizzes from "./pages/Quizzes";
 import QuestionBank from "./pages/QuestionBank";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/quizzes" element={<Quizzes />} />
             <Route path="/question-bank" element={<QuestionBank />} />
