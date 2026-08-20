@@ -207,6 +207,14 @@ const Auth = () => {
                   language === 'ar' ? 'دخول' : 'Login'
                 )}
               </Button>
+              <Button
+                variant="link"
+                className="w-full text-sm"
+                onClick={handleForgotPassword}
+                disabled={loading}
+              >
+                {language === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+              </Button>
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
