@@ -54,6 +54,19 @@ const Auth = () => {
     }
   };
 
+  const friendlyError = (msg: string) => {
+    const isAr = language === 'ar';
+    const m = msg.toLowerCase();
+    if (m.includes('invalid login credentials')) return isAr ? 'البريد أو كلمة المرور غير صحيحة' : 'Invalid email or password';
+    if (m.includes('user already registered') || m.includes('already been registered')) return isAr ? 'هذا البريد مسجل بالفعل، اضغط "تسجيل الدخول"' : 'Email already registered — please sign in instead';
+    if (m.includes('invalid') && m.includes('email')) return isAr ? 'صيغة البريد غير مقبولة، استخدم بريد حقيقي مثل name@gmail.com' : 'Invalid email — use a real address like name@gmail.com';
+    if (m.includes('password') && m.includes('6')) return isAr ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters';
+    if (m.includes('rate limit') || m.includes('too many')) return isAr ? 'محاولات كتير، استنى دقيقة وجرب تاني' : 'Too many attempts, wait a minute and try again';
+    if (m.includes('email not confirmed')) return isAr ? 'لازم تأكد البريد من الرسالة المرسلة لك' : 'Please confirm your email first';
+    if (m.includes('failed to fetch') || m.includes('network')) return isAr ? 'مشكلة في الاتصال بالإنترنت، جرب تاني' : 'Network problem, please try again';
+    return msg;
+  };
+
   const handleLogin = async () => {
     if (!validateForm()) return;
     
@@ -66,13 +79,45 @@ const Auth = () => {
     if (error) {
       toast({
         title: language === 'ar' ? 'خطأ في تسجيل الدخول' : 'Login Error',
-        description: error.message === 'Invalid login credentials' 
-          ? (language === 'ar' ? 'البريد أو كلمة المرور غير صحيحة' : 'Invalid email or password')
-          : error.message,
+        description: friendlyError(error.message),
         variant: 'destructive',
       });
     }
     setLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    const isAr = language === 'ar';
+    try {
+      emailSchema.parse(email);
+    } catch {
+      toast({
+        title: isAr ? 'اكتب بريدك أولاً' : 'Enter your email first',
+        description: isAr ? 'اكتب البريد الإلكتروني في الخانة ثم اضغط نسيت كلمة المرور' : 'Type your email in the field, then click forgot password',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: isAr ? 'تعذّر إرسال الرابط' : 'Could not send link',
+        description: friendlyError(error.message),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: isAr ? 'تم إرسال الرابط' : 'Link sent',
+      description: isAr ? 'راجع بريدك واضغط على الرابط لتغيير كلمة المرور' : 'Check your inbox and click the link to reset your password',
+    });
   };
 
   const handleSignup = async () => {
@@ -88,13 +133,9 @@ const Auth = () => {
     });
 
     if (error) {
-      const errorMessage = error.message === 'User already registered'
-        ? (language === 'ar' ? 'هذا البريد مسجل بالفعل' : 'Email already registered')
-        : error.message;
-      
       toast({
         title: language === 'ar' ? 'خطأ في التسجيل' : 'Signup Error',
-        description: errorMessage,
+        description: friendlyError(error.message),
         variant: 'destructive',
       });
     } else {
