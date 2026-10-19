@@ -1,73 +1,122 @@
-# Welcome to your Lovable project
+# SmartEdu — مساعد المذاكرة الذكي 🎓
 
-## Project info
+منصّة تعليمية ويب تساعد الطالب ينظّم مذكرته ويقيّم نفسه بذكاء.
+الطالب يرفع ملزماته وملفات دراسته، والنظام يحوّلها تلقائياً إلى اختبارات قصيرة،
+خطط مذاكرة يومية، خريطة ذهنية للمادة، وتقارير أسبوعية عن مستواه.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**الفكرة الأساسية:** الطالب مش محتاج حد يذاكر له، هو محتاج حد يقوليه ذاكر إمتى،
+إيه بالظبط، وإنت واقف فين.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🧱 التقنيات المستخدمة
 
-**Use Lovable**
+| الطبقة | التقنية |
+|---|---|
+| الواجهة | React 18 + TypeScript + Vite |
+| التنسيق | Tailwind CSS + shadcn/ui |
+| قاعدة البيانات | PostgreSQL (Supabase) |
+| تسجيل الدخول | Supabase Auth (بريد وكلمة مرور) |
+| تخزين الملفات | Supabase Storage |
+| التحديث اللحظي | Supabase Realtime |
+| منطق الذكاء الاصطناعي | Supabase Edge Functions (Deno + TypeScript) |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+> كل منطق الذكاء الاصطناعي شغّال **على السيرفر** داخل Edge Functions،
+> ومفاتيح النموذج مش موجودة في كود الواجهة نهائياً.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 📄 الصفحات ومهامها
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+| الصفحة | الملف | بتعمل إيه |
+|---|---|---|
+| تسجيل الدخول / إنشاء حساب | `Auth.tsx` | تسجيل، دخول، استعادة كلمة المرور، رسائل خطأ بالعربي |
+| إعادة تعيين كلمة المرور | `ResetPassword.tsx` | يدخل من رابط الإيميل ويختار كلمة مرور جديدة |
+| الأونبوردنج | `UploadSchedule.tsx` | يرفع صورة الجدول المدرسي، والذكاء الاصطناعي يقرأها ويعمل خطة 7 أيام |
+| لوحة التحكم | `Dashboard.tsx` | إحصائيات، تحدي اليوم الذكي، مهام اليوم، الميعاد الجاي، بطاقات التحفيز |
+| المواد والملازم | `Materials.tsx` | رفع PDF/صور/نصوص، استخراج النص، ربط المادة بموضوع |
+| الاختبارات | `Quizzes.tsx` | توليد اختبار 10 أسئلة من المادة، مستوى صعوبة، اختيار اللغة |
+| بنك الأسئلة | `QuestionBank.tsx` | تخزين الأسئلة المولّدة مع topic/skill/نسخة للاختيار منها بعدين |
+| الدردشة | `Chat.tsx` | مساعد يشرح ويحل أسئلة من محتوى الطالب نفسه |
+| غرفة الدعم | `SupportRoom.tsx` | مستشار أكاديمي للضغط والتوتر، بالعامية المصرية |
+| وضع التركيز | `FocusMode.tsx` | بومودورو 25 دقيقة تركيز + 5 راحة، أصوات هادئة، عدّاد جلسات |
+| التحديات | `Challenge.tsx` | تحديات أسبوعية + كويز يومي + تحدي مباشر (PvP) لحظي |
+| لوحة المتصدرين | `Leaderboard.tsx` | ترتيب حسب نقاط XP، مستويات، مراحل، شارات |
+| التحليلات | `Insights.tsx` | تقرير أسبوعي بالذكاء الاصطناعي عن أنماط المذاكرة |
+| التوقع | `Reports.tsx` | توقّع نتيجة الامتحان (آمن / متوسط / خطر) حسب أدائك |
+| الملف الشخصي | `Profile.tsx` | نقاط، شارات، استرجاع السلسلة، تجميد السلسلة، radar المواد |
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🗄️ قاعدة البيانات
+
+البيانات كلها مخزّنة في قاعدة PostgreSQL سحابية. أهم الجداول:
+
+**المستخدم:** `user_profiles`, `user_achievements`, `achievements`
+**المذاكرة:** `materials`, `tasks`, `study_schedule`, `study_plans`, `study_sessions`, `study_insights`
+**الاختبارات:** `quizzes`, `quiz_questions`, `quiz_results`, `question_bank`, `daily_quiz_attempts`
+**التحديات:** `weekly_challenges`, `challenge_rooms`, `challenge_room_answers`, `user_challenge_progress`
+**التحفيز:** `notifications`, `streak_recoveries`, `streak_freeze_history`
+**الذكاء الاصطناعي:** `messages`, `curriculum_context`, `transfer_question_attempts`
+
+**الملفات نفسها** (PDF وصور) مش بتتخزن داخل الجداول — بتترفع في Storage Buckets،
+والجدول `materials` بيحفظ اسم الملف والمسار بتاعه بس.
+
+---
+
+## 🔒 الأمان
+
+- **Row Level Security (RLS)** مفعّل على كل الجداول: أي استعلام بيرجع بيانات
+  المستخدم المسجّل دخوله فقط (`auth.uid()`).
+- **تصحيح الاختبارات على السيرفر:** الدوال `grade_quiz` و`submit_daily_quiz`
+  هي اللي بتحسب الدرجة، فالطالب مش قادر يعدّل نتيجته من المتصفح.
+- عمود `correct_answer` محجوب عن قراءات العميل المباشرة (أذونات على مستوى الأعمدة).
+- دوال `SECURITY DEFINER` محجوزة عن المستخدم المجهول (anon).
+
+---
+
+## ⚙️ طريقة التشغيل
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1) تثبيت الاعتماديات
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2) تجهيز ملف البيئة .env (انسخ القيم من مشروع Supabase بتاعك)
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3) تشغيل سيرفر التطوير
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+المنصّة هتفتح على `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**نشر المشروع:** `npm run build` ثم ارفع مجلد `dist` على أي استضافة ساكنة
+(Vercel / Netlify / GitHub Pages).
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🗂️ هيكل المشروع
 
-## What technologies are used for this project?
+```text
+src/
+├── pages/          كل صفحة في النظام (17 ملف)
+├── components/     مكوّنات الواجهة (charts, chat, ui)
+├── hooks/          منطق قابل لإعادة الاستخدام (useQuestionBank, useAudio)
+├── integrations/   نقطة الاتصال بقاعدة البيانات
+└── lib/            أدوات مساعدة (utils, validation, i18n)
+supabase/
+├── functions/      منطق السيرفر والذكاء الاصطناعي (9 دوال)
+└── migrations/     تاريخ بناء قاعدة البيانات (جداول + أمان)
+```
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🌍 اللغات
 
-## How can I deploy this project?
+الواجهة كاملة تعمل بالعربي (RTL) وبالإنجليزي (LTR) من مفتاح واحد،
+وأسماء المواد والخطط بتتولّد بنفس اللغة المختارة.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**SmartEdu** — مشروع تخرج: منظّم مذاكرة شخصي يعمل بالذكاء الاصطناعي.
