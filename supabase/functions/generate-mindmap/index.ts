@@ -3,12 +3,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const LOVABLE_API_URL = 'https://api.lovable.dev/v1/chat/completions'
+import { corsHeaders as sharedCors, geminiText } from '../_shared/gemini.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: sharedCors })
   }
 
   try {
@@ -79,41 +78,23 @@ Deno.serve(async (req) => {
 }
 Keep nodes concise. Generate 8-15 nodes. Text:\n${truncated}`
 
-    const apiKey = Deno.env.get('LOVABLE_API_KEY')!
-    const response = await fetch(LOVABLE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an educational content analyzer. Return ONLY valid JSON, no markdown.' },
-          { role: 'user', content: prompt },
-        ],
-        response_format: { type: 'json_object' },
-      }),
+    const raw = await geminiText({
+      system: 'You are an educational content analyzer. Return ONLY valid JSON, no markdown.',
+      parts: [{ text: prompt }],
+      temperature: 0.5,
+      json: true,
     })
 
-    if (!response.ok) {
-      const err = await response.text()
-      console.error('AI API error:', err)
-      return new Response(JSON.stringify({ error: 'AI generation failed' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    const data = await response.json()
-    const mindMapData = JSON.parse(data.choices[0].message.content)
+    const mindMapData = JSON.parse(raw)
 
     return new Response(JSON.stringify(mindMapData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    const status = (error as any)?.status === 429 ? 429 : 500
+    return new Response(JSON.stringify({ error: (error as any).message }), {
+      status, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })

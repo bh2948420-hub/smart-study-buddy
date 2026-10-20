@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, geminiText } from "../_shared/gemini.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,8 +8,6 @@ serve(async (req) => {
 
   try {
     const { studentData, language = 'ar' } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
     const systemPrompt = language === 'ar'
       ? `أنت محلل أداء أكاديمي متقدم بالذكاء الاصطناعي. مهمتك تحلل بيانات الطالب وتتنبأ بأدائه في الامتحانات القادمة.
@@ -80,29 +74,12 @@ Respond with JSON only:
 
 JSON only, no extra text.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: JSON.stringify(studentData) },
-        ],
-      }),
+    const rawContent = await geminiText({
+      system: systemPrompt,
+      parts: [{ text: JSON.stringify(studentData) }],
+      temperature: 0.7,
+      json: true,
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI error:', response.status, errorText);
-      throw new Error('AI gateway error');
-    }
-
-    const data = await response.json();
-    const rawContent = data.choices?.[0]?.message?.content || '';
 
     try {
       const cleaned = rawContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -117,8 +94,9 @@ JSON only, no extra text.`;
     }
   } catch (error) {
     console.error('Error:', error);
+    const status = (error as any)?.status === 429 ? 429 : 500;
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

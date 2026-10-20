@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, geminiText } from "../_shared/gemini.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,7 +59,7 @@ serve(async (req) => {
     const totalStudyMinutes = sessions?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
     const totalTasksCompleted = tasks?.length || 0;
     const totalQuizzesCompleted = quizResults?.length || 0;
-    
+
     const averageQuizScore = quizResults && quizResults.length > 0
       ? quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length
       : 0;
@@ -111,24 +107,9 @@ serve(async (req) => {
       }))
     };
 
-    // Generate AI insights using Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a supportive study coach analyzing a student's weekly performance. Based on their data, provide:
+    // Generate AI insights
+    const raw = await geminiText({
+      system: `You are a supportive study coach analyzing a student's weekly performance. Based on their data, provide:
 1. A brief pattern analysis (2-3 sentences about their study habits)
 2. 3-4 specific, actionable improvement recommendations
 3. A short motivational message (1-2 sentences)
@@ -138,31 +119,16 @@ Be encouraging but honest. Focus on practical advice. Respond in JSON format:
   "patternAnalysis": "...",
   "recommendations": ["...", "...", "..."],
   "motivationMessage": "..."
-}`
-          },
-          {
-            role: 'user',
-            content: `Here's my study data for this week:\n${JSON.stringify(dataSummary, null, 2)}`
-          }
-        ]
-      }),
+}`,
+      parts: [{ text: `Here's my study data for this week:\n${JSON.stringify(dataSummary, null, 2)}` }],
+      temperature: 0.7,
+      json: true,
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
-      throw new Error('Failed to generate AI insights');
-    }
-
-    const aiData = await aiResponse.json();
-    const aiContent = aiData.choices?.[0]?.message?.content || '';
-    
     // Parse AI response
     let parsedAI;
     try {
-      // Extract JSON from potential markdown code blocks
-      const jsonMatch = aiContent.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, aiContent];
-      parsedAI = JSON.parse(jsonMatch[1] || aiContent);
+      parsedAI = JSON.parse(raw);
     } catch {
       parsedAI = {
         patternAnalysis: 'Keep up the great work! Your study patterns show dedication.',

@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, geminiText, imagePart } from "../_shared/gemini.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,14 +8,9 @@ serve(async (req) => {
 
   try {
     const { weakSubjects, studyHoursPerDay, goals, language = 'ar', scheduleImageBase64 } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
 
     const today = new Date();
-    const dayNames = language === 'ar' 
+    const dayNames = language === 'ar'
       ? ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
       : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -102,10 +93,11 @@ Rules:
 
 Respond with JSON only, no extra text.`;
 
-    let userContent: any;
-    
+    let userText: string;
+    const parts: any[] = [];
+
     if (scheduleImageBase64) {
-      const textPart = language === 'ar'
+      userText = language === 'ar'
         ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
 عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
 أهداف الطالب: ${goals || 'مش محدد'}
@@ -114,59 +106,29 @@ Respond with JSON only, no extra text.`;
 Study hours per day: ${studyHoursPerDay || 'Not specified'}
 Student goals: ${goals || 'Not specified'}
 The attached image is the school schedule. Analyze it and extract subjects/times.`;
-
-      userContent = [
-        { type: 'text', text: textPart },
-        { type: 'image_url', image_url: { url: scheduleImageBase64 } },
-      ];
+      parts.push({ text: userText }, imagePart(scheduleImageBase64));
     } else {
-      userContent = language === 'ar'
+      userText = language === 'ar'
         ? `المواد الضعيفة: ${weakSubjects || 'مش محدد'}
 عدد ساعات المذاكرة يومياً: ${studyHoursPerDay || 'مش محدد'}
 أهداف الطالب: ${goals || 'مش محدد'}`
         : `Weak subjects: ${weakSubjects || 'Not specified'}
 Study hours per day: ${studyHoursPerDay || 'Not specified'}
 Student goals: ${goals || 'Not specified'}`;
+      parts.push({ text: userText });
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
-      }),
+    const rawContent = await geminiText({
+      system: systemPrompt,
+      parts,
+      temperature: 0.7,
+      json: true,
     });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
-          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required' }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const errorText = await response.text();
-      console.error('AI error:', response.status, errorText);
-      throw new Error('AI gateway error');
-    }
-
-    const data = await response.json();
-    const rawContent = data.choices?.[0]?.message?.content || '';
 
     // Try to parse as JSON
     let plan = '';
     let tasks: any[] = [];
-    
+
     try {
       // Clean markdown code blocks if present
       const cleaned = rawContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -184,8 +146,9 @@ Student goals: ${goals || 'Not specified'}`;
     });
   } catch (error) {
     console.error('Error:', error);
+    const status = (error as any)?.status === 429 ? 429 : 500;
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
