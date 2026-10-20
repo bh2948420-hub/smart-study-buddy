@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, geminiText } from "../_shared/gemini.ts";
 
 type Question = {
   question_type: 'multiple_choice' | 'true_false';
@@ -133,6 +129,30 @@ function sanitize(questions: Question[], lang: 'ar' | 'en'): Question[] {
   return out;
 }
 
+// JSON schema forcing a well-formed quiz object
+const QUIZ_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    questions: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          question_type: { type: 'STRING', enum: ['multiple_choice', 'true_false'] },
+          question_text: { type: 'STRING' },
+          options: { type: 'ARRAY', items: { type: 'STRING' } },
+          correct_answer: { type: 'STRING' },
+          explanation: { type: 'STRING' },
+          topic: { type: 'STRING' },
+          skill: { type: 'STRING', enum: ['understanding', 'application', 'analysis', 'evaluation'] },
+        },
+        required: ['question_type', 'question_text', 'correct_answer', 'explanation'],
+      },
+    },
+  },
+  required: ['questions'],
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -140,11 +160,6 @@ serve(async (req) => {
 
   try {
     const { content, title, subject, difficulty, questionCount, language } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const numQuestions = questionCount || 10;
     const lang: 'ar' | 'en' =
@@ -178,116 +193,44 @@ ${content}
 
 Before writing: mentally extract the ${numQuestions} most important concepts in the content, then write one professional item per concept.`;
 
-    const callAI = async (extra?: string) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const callAI = async (extra?: string) => {
+      const raw = await geminiText({
+        system: systemPrompt,
+        parts: [{ text: extra ? `${userPrompt}\n\n${extra}` : userPrompt }],
         temperature: 0.5,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: extra ? `${userPrompt}\n\n${extra}` : userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_quiz",
-              description: "Create a professional quiz with high-quality assessment items",
-              parameters: {
-                type: "object",
-                properties: {
-                  questions: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        question_type: {
-                          type: "string",
-                          enum: ["multiple_choice", "true_false"],
-                        },
-                        question_text: { type: "string", description: "Clear single-sentence stem" },
-                        options: {
-                          type: "array",
-                          items: { type: "string" },
-                          description: "Exactly 4 parallel options for multiple choice; omit for true/false",
-                        },
-                        correct_answer: {
-                          type: "string",
-                          description: "Must exactly match one of the options",
-                        },
-                        explanation: {
-                          type: "string",
-                          description: "Why the answer is right and why the closest distractor is wrong",
-                        },
-                        topic: { type: "string", description: "Sub-topic covered" },
-                        skill: {
-                          type: "string",
-                          enum: ["understanding", "application", "analysis", "evaluation"],
-                        },
-                      },
-                      required: ["question_type", "question_text", "correct_answer", "explanation"],
-                    },
-                  },
-                },
-                required: ["questions"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "create_quiz" } },
-      }),
-    });
+        json: true,
+        schema: QUIZ_SCHEMA,
+      });
+      return JSON.parse(raw).questions || [];
+    };
 
-    let response = await callAI();
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-
-      if (response.status === 429) {
+    let questions: Question[] = [];
+    try {
+      questions = sanitize(await callAI(), lang);
+    } catch (e) {
+      const status = (e as any)?.status;
+      console.error('AI error:', status, (e as any).message);
+      if (status === 429) {
         return new Response(JSON.stringify({ error: lang === 'ar' ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً" : "Rate limit exceeded, try again later" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: lang === 'ar' ? "يرجى إضافة رصيد للمتابعة" : "Please add credits to continue" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw e;
     }
-
-    let data = await response.json();
-    let toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error("No tool call response from AI");
-    }
-
-    let questions: Question[] = sanitize(JSON.parse(toolCall.function.arguments).questions || [], lang);
 
     // If too many items were dropped by validation, ask once more for the missing ones
     if (questions.length < Math.min(numQuestions, 3) || questions.length < Math.ceil(numQuestions * 0.7)) {
       const missing = numQuestions - questions.length;
       console.log(`Retrying for ${missing} additional questions (got ${questions.length})`);
-      const retry = await callAI(
-        lang === 'ar'
-          ? `تنبيه: أعد كتابة الاختبار كاملاً بـ ${numQuestions} سؤال، مع التأكد أن كل سؤال اختيار من متعدد له 4 خيارات مختلفة وأن الإجابة الصحيحة مطابقة حرفياً لأحدها.`
-          : `Note: rewrite the full quiz with ${numQuestions} items, ensuring every multiple-choice item has 4 distinct options and correct_answer matches one option exactly.`
-      );
-      if (retry.ok) {
-        const retryData = await retry.json();
-        const retryCall = retryData.choices?.[0]?.message?.tool_calls?.[0];
-        if (retryCall) {
-          const retryQuestions = sanitize(JSON.parse(retryCall.function.arguments).questions || [], lang);
-          if (retryQuestions.length > questions.length) questions = retryQuestions;
-        }
+      try {
+        const retryQuestions = sanitize(await callAI(
+          lang === 'ar'
+            ? `تنبيه: أعد كتابة الاختبار كاملاً بـ ${numQuestions} سؤال، مع التأكد أن كل سؤال اختيار من متعدد له 4 خيارات مختلفة وأن الإجابة الصحيحة مطابقة حرفياً لأحدها.`
+            : `Note: rewrite the full quiz with ${numQuestions} items, ensuring every multiple-choice item has 4 distinct options and correct_answer matches one option exactly.`
+        ), lang);
+        if (retryQuestions.length > questions.length) questions = retryQuestions;
+      } catch (e) {
+        console.error('Retry failed:', (e as any).message);
       }
     }
 

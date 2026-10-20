@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, geminiText } from "../_shared/gemini.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,11 +8,9 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
 
     const authHeader = req.headers.get("Authorization") || "";
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -73,52 +67,25 @@ ${summary}
 
 ولّد سؤال نقل واحد يقيس نفس المفهوم الجوهري بسيناريو مختلف تماماً.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const raw = await geminiText({
+      system: systemPrompt,
+      parts: [{ text: userPrompt }],
+      temperature: 0.7,
+      json: true,
+      schema: {
+        type: 'OBJECT',
+        properties: {
+          question_text: { type: 'STRING' },
+          options: { type: 'ARRAY', items: { type: 'STRING' } },
+          correct_answer: { type: 'STRING' },
+          explanation: { type: 'STRING' },
+          topic: { type: 'STRING' },
+        },
+        required: ['question_text', 'options', 'correct_answer', 'explanation', 'topic'],
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "create_transfer_question",
-            description: "إنشاء سؤال نقل واحد",
-            parameters: {
-              type: "object",
-              properties: {
-                question_text: { type: "string" },
-                options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
-                correct_answer: { type: "string", description: "نص الخيار الصحيح بالضبط" },
-                explanation: { type: "string" },
-                topic: { type: "string", description: "المفهوم الأساسي الذي يقيسه السؤال" },
-              },
-              required: ["question_text", "options", "correct_answer", "explanation", "topic"],
-            },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "create_transfer_question" } },
-      }),
     });
 
-    if (!aiResp.ok) {
-      const text = await aiResp.text();
-      console.error("AI error", aiResp.status, text);
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "تم تجاوز حد الطلبات، حاول لاحقاً" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }});
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "يرجى إضافة رصيد للذكاء الاصطناعي" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }});
-      throw new Error(`AI gateway error ${aiResp.status}`);
-    }
-
-    const data = await aiResp.json();
-    const call = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!call) throw new Error("No tool call");
-    const parsed = JSON.parse(call.function.arguments);
+    const parsed = JSON.parse(raw);
 
     // Ensure correct_answer matches one of the options
     if (!parsed.options.includes(parsed.correct_answer)) {
@@ -147,8 +114,9 @@ ${summary}
     });
   } catch (err) {
     console.error("generate-transfer-question error:", err);
+    const status = (err as any)?.status === 429 ? 429 : 500;
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
