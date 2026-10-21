@@ -4,7 +4,7 @@ export const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.8-flash';
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
 
 export class GeminiError extends Error {
@@ -55,12 +55,27 @@ export function imagePart(source: string, fallbackType = 'image/jpeg'): Part {
   return { inlineData: { mimeType: fallbackType, data: source } };
 }
 
-async function post(path: string, body: unknown): Promise<Response> {
-  const resp = await fetch(`${BASE}:${path}`, {
+async function post(path: string, body: unknown, model = MODEL): Promise<Response> {
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': getKey() },
     body: JSON.stringify(body),
   });
+  return resp;
+}
+
+// Post with automatic failover: if a model is overloaded (503), move down the
+// fallback chain until one accepts the request.
+const FALLBACK_CHAIN = [MODEL, 'gemini-3.6-flash', 'gemini-flash-lite-latest'];
+
+async function postWithFailover(path: string, body: unknown): Promise<Response> {
+  let resp = await post(path, body, FALLBACK_CHAIN[0]);
+  for (const model of FALLBACK_CHAIN.slice(1)) {
+    if (resp.status !== 503) break;
+    console.warn(`Model overloaded (503), retrying with ${model}`);
+    await new Promise((r) => setTimeout(r, 1500));
+    resp = await post(path, body, model);
+  }
   return resp;
 }
 
@@ -89,7 +104,7 @@ export async function geminiText(opts: {
   };
   if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
 
-  const resp = await post('generateContent', body);
+  const resp = await postWithFailover('generateContent', body);
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
     console.error('Gemini error:', resp.status, errText);
@@ -113,7 +128,7 @@ export async function geminiStream(opts: {
   };
   if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
 
-  const resp = await post('streamGenerateContent?alt=sse', body);
+  const resp = await postWithFailover('streamGenerateContent?alt=sse', body);
   if (!resp.ok || !resp.body) {
     const errText = await resp.text().catch(() => '');
     console.error('Gemini stream error:', resp.status, errText);
