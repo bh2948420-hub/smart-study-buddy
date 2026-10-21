@@ -101,7 +101,7 @@ export async function geminiText(opts: {
   };
   if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
 
-  const resp = await post('generateContent', body);
+  const resp = await postWithFailover('generateContent', body);
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
     console.error('Gemini error:', resp.status, errText);
