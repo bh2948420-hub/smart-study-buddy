@@ -5,6 +5,7 @@ export const corsHeaders = {
 };
 
 const MODEL = 'gemini-3.8-flash';
+const FALLBACK_MODEL = 'gemini-3.6-flash';
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
 
 export class GeminiError extends Error {
@@ -55,12 +56,23 @@ export function imagePart(source: string, fallbackType = 'image/jpeg'): Part {
   return { inlineData: { mimeType: fallbackType, data: source } };
 }
 
-async function post(path: string, body: unknown): Promise<Response> {
-  const resp = await fetch(`${BASE}:${path}`, {
+async function post(path: string, body: unknown, model = MODEL): Promise<Response> {
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': getKey() },
     body: JSON.stringify(body),
   });
+  return resp;
+}
+
+// Post with automatic failover: if the primary model is overloaded (503),
+// retry once against the fallback model.
+async function postWithFailover(path: string, body: unknown): Promise<Response> {
+  const resp = await post(path, body);
+  if (resp.status === 503) {
+    console.warn('Primary model overloaded (503), retrying with fallback model');
+    return post(path, body, FALLBACK_MODEL);
+  }
   return resp;
 }
 
