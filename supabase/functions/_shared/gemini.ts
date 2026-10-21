@@ -5,7 +5,6 @@ export const corsHeaders = {
 };
 
 const MODEL = 'gemini-3.8-flash';
-const FALLBACK_MODEL = 'gemini-3.6-flash';
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
 
 export class GeminiError extends Error {
