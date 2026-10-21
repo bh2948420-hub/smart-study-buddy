@@ -125,7 +125,7 @@ export async function geminiStream(opts: {
   };
   if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
 
-  const resp = await post('streamGenerateContent?alt=sse', body);
+  const resp = await postWithFailover('streamGenerateContent?alt=sse', body);
   if (!resp.ok || !resp.body) {
     const errText = await resp.text().catch(() => '');
     console.error('Gemini stream error:', resp.status, errText);
