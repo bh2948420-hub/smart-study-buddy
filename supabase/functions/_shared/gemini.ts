@@ -65,13 +65,17 @@ async function post(path: string, body: unknown, model = MODEL): Promise<Respons
   return resp;
 }
 
-// Post with automatic failover: if the primary model is overloaded (503),
-// retry once against the fallback model.
+// Post with automatic failover: if a model is overloaded (503), move down the
+// fallback chain until one accepts the request.
+const FALLBACK_CHAIN = [MODEL, 'gemini-3.6-flash', 'gemini-flash-lite-latest'];
+
 async function postWithFailover(path: string, body: unknown): Promise<Response> {
-  const resp = await post(path, body);
-  if (resp.status === 503) {
-    console.warn('Primary model overloaded (503), retrying with fallback model');
-    return post(path, body, FALLBACK_MODEL);
+  let resp = await post(path, body, FALLBACK_CHAIN[0]);
+  for (const model of FALLBACK_CHAIN.slice(1)) {
+    if (resp.status !== 503) break;
+    console.warn(`Model overloaded (503), retrying with ${model}`);
+    await new Promise((r) => setTimeout(r, 1500));
+    resp = await post(path, body, model);
   }
   return resp;
 }
