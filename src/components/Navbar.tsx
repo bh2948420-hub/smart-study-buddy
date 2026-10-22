@@ -10,20 +10,20 @@ export function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navLinks = [
-    { to: '/', label: t('home') },
+  const navLinks: { to: string; label: string; icon?: typeof Focus; cls?: string }[] = [
+    { to: '/', label: t('home'), cls: 'lg:hidden' }, // the logo already links home on desktop
     { to: '/dashboard', label: t('dashboard') },
     { to: '/focus', label: language === 'ar' ? 'وضع التركيز' : 'Focus Mode', icon: Focus },
     { to: '/chat', label: t('chat') },
     { to: '/materials', label: language === 'ar' ? 'المواد' : 'Materials' },
     { to: '/quizzes', label: language === 'ar' ? 'الاختبارات' : 'Quizzes' },
-    { to: '/question-bank', label: language === 'ar' ? 'بنك الأسئلة' : 'Question Bank', icon: Library },
-
+    { to: '/question-bank', label: language === 'ar' ? 'بنك الأسئلة' : 'Question Bank', icon: Library, cls: 'hidden xl:block' },
     { to: '/leaderboard', label: language === 'ar' ? 'المتصدرين' : 'Leaderboard', icon: Trophy },
-    { to: '/challenge', label: language === 'ar' ? 'تحدي مباشر' : 'Live Battle', icon: Swords },
-    { to: '/insights', label: language === 'ar' ? 'التحليلات' : 'Insights', icon: Brain },
-    { to: '/support', label: language === 'ar' ? 'الدعم النفسي' : 'Support', icon: Heart },
+    { to: '/challenge', label: language === 'ar' ? 'تحدي مباشر' : 'Live Battle', icon: Swords, cls: 'hidden xl:block' },
+    { to: '/insights', label: language === 'ar' ? 'التحليلات' : 'Insights', icon: Brain, cls: 'hidden xl:block' },
+    { to: '/support', label: language === 'ar' ? 'الدعم النفسي' : 'Support', icon: Heart, cls: 'hidden xl:block' },
   ];
+
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -43,16 +43,18 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-4">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                isActive(link.to) ? 'text-primary' : 'text-muted-foreground'
+                'whitespace-nowrap text-sm font-medium transition-colors hover:text-primary',
+                isActive(link.to) ? 'text-primary' : 'text-muted-foreground',
+                link.cls
               )}
             >
+
               {link.label}
             </Link>
           ))}
