@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+
 
 export interface StudyInsight {
   id: number;
@@ -25,6 +27,8 @@ export const useInsights = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
+  const { language } = useLanguage();
+
 
   const fetchInsights = useCallback(async () => {
     try {
@@ -69,7 +73,8 @@ export const useInsights = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ language }),
+
         }
       );
 
@@ -81,19 +86,21 @@ export const useInsights = () => {
       const data = await response.json();
       
       toast({
-        title: "Insights Generated!",
-        description: "Your weekly study report is ready.",
+        title: language === 'ar' ? "تم إنشاء التقرير!" : "Insights Generated!",
+        description: language === 'ar' ? "تقريرك الأسبوعي جاهز." : "Your weekly study report is ready.",
       });
+
 
       await fetchInsights();
       return data.insight;
     } catch (error: any) {
       console.error('Error generating insights:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to generate insights",
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: error.message || (language === 'ar' ? "فشل إنشاء التقرير" : "Failed to generate insights"),
         variant: "destructive",
       });
+
       throw error;
     } finally {
       setGenerating(false);
