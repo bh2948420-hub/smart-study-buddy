@@ -506,6 +506,233 @@ export type Database = {
           },
         ]
       }
+      sq_energy: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          level: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          level: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          level?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sq_journeys: {
+        Row: {
+          created_at: string
+          id: string
+          summary: Json
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          summary: Json
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          summary?: Json
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      sq_life_prefs: {
+        Row: {
+          learned: Json
+          school_end: string
+          school_start: string
+          sleep_end: string
+          sleep_start: string
+          study_days: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          learned?: Json
+          school_end?: string
+          school_start?: string
+          sleep_end?: string
+          sleep_start?: string
+          study_days?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          learned?: Json
+          school_end?: string
+          school_start?: string
+          sleep_end?: string
+          sleep_start?: string
+          study_days?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sq_protected_time: {
+        Row: {
+          created_at: string
+          days: string
+          end_time: string
+          id: string
+          start_time: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days?: string
+          end_time: string
+          id?: string
+          start_time: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sq_quests: {
+        Row: {
+          created_at: string
+          day: number | null
+          goal_id: string
+          id: string
+          minutes: number
+          position: number
+          slot: string | null
+          status: string
+          title: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          day?: number | null
+          goal_id: string
+          id?: string
+          minutes?: number
+          position?: number
+          slot?: string | null
+          status?: string
+          title: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          day?: number | null
+          goal_id?: string
+          id?: string
+          minutes?: number
+          position?: number
+          slot?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sq_quests_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "sq_weekly_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sq_thoughts: {
+        Row: {
+          category: string
+          chosen: string | null
+          created_at: string
+          dump_id: string
+          id: string
+          link: string | null
+          raw: string
+          suggestion: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          chosen?: string | null
+          created_at?: string
+          dump_id: string
+          id?: string
+          link?: string | null
+          raw: string
+          suggestion: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          chosen?: string | null
+          created_at?: string
+          dump_id?: string
+          id?: string
+          link?: string | null
+          raw?: string
+          suggestion?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sq_weekly_goals: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          title: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       streak_freeze_history: {
         Row: {
           action_type: string
