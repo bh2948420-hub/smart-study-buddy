@@ -71,10 +71,6 @@ serve(async (req) => {
   }
 });
 
-const PHILOSOPHY = languageIs() => null; // placeholder removed below
-
-function languageIs() { return null; }
-
 const untangleSchema = {
   type: 'OBJECT',
   properties: {
