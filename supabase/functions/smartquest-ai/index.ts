@@ -294,7 +294,8 @@ async function replan(body: any, language: 'en' | 'ar') {
 قواعد صارمة:
 - الهدف لسه ثابت وأمين. ممنوع أي لوم أو "أنت متأخر" أو "ضايع وقت".
 - الـ Quests المكتملة متلمسهاش.
-- وزّع الباقي على الأيام اللي فاضلة، لو الوقت ضيق صغّر حجم الـ Quests.
+- الوزّع الباقي على الأيام اللي فاضلة، لو الوقت ضيق صغّر حجم الـ Quests.
+- رجّع كل Quest بنفس goalTitle اللي جه بيه.
 - الأيام: 0=السبت، 1=الأحد، 2=الاثنين، 3=الثلاثاء، 4=الأربعاء، 5=الخميس، 6=الجمعة.
 - slots: morning | afternoon | evening.
 - minutes من 10 لـ 60.
@@ -306,6 +307,7 @@ Strict rules:
 - The goal is still fixed and safe. No guilt, no "you are behind", no "you lost time".
 - Do not touch completed quests.
 - Distribute the rest over remaining days; if time is tight, make quests smaller.
+- Return every quest with the same goalTitle it came with.
 - Days: 0=Saturday, 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday.
 - Slots: morning | afternoon | evening.
 - minutes: 10-60.
