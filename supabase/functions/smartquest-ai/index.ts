@@ -272,12 +272,13 @@ const replanSchema = {
       items: {
         type: 'OBJECT',
         properties: {
+          goalTitle: { type: 'STRING' },
           title: { type: 'STRING' },
           minutes: { type: 'INTEGER' },
           day: { type: 'INTEGER' },
           slot: { type: 'STRING', enum: ['morning', 'afternoon', 'evening'] },
         },
-        required: ['title', 'minutes', 'day', 'slot'],
+        required: ['goalTitle', 'title', 'minutes', 'day', 'slot'],
       },
     },
     message: { type: 'STRING' },
@@ -312,7 +313,7 @@ Strict rules:
 
   const prompt = JSON.stringify({
     remainingQuests: (body.quests || []).map((q: any) => ({
-      title: q.title, minutes: q.minutes, day: q.day, slot: q.slot,
+      goalTitle: q.goalTitle ?? q.goal_title ?? '', title: q.title, minutes: q.minutes, day: q.day, slot: q.slot,
     })),
     completedCount: body.completedCount ?? 0,
     currentDay: body.currentDay ?? 0,
@@ -332,6 +333,7 @@ Strict rules:
   const parsed = JSON.parse(out);
   if (!Array.isArray(parsed.quests)) throw new Error('Bad AI response');
   const quests = parsed.quests.slice(0, 30).map((q: any) => ({
+    goalTitle: String(q.goalTitle ?? ''),
     title: String(q.title),
     minutes: Math.min(90, Math.max(10, Number(q.minutes) || 30)),
     day: Math.min(6, Math.max(0, Number(q.day) || 0)),
