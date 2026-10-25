@@ -257,7 +257,7 @@ export function AdventureMap() {
 
       {/* The adventure map — 7 day stations */}
       <div className="relative">
-        <div className="absolute top-0 bottom-0 start-[22px] border-s-2 border-dashed border-primary/25 rtl:-translate-x-full rtl:translate-x-0" style={{ left: '22px', right: 'auto' }} />
+        <div className="absolute top-0 bottom-0 start-[22px] border-s-2 border-dashed border-primary/25" />
         <div className="space-y-4">
           {DAY_NAMES[language].map((dayName, day) => {
             const dayQuests = sorted.filter((q) => q.day === day);
@@ -277,7 +277,7 @@ export function AdventureMap() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">{dayName}</span>
                       {isToday && (
-                        <Badge className="text-[10px] px-2 py-0 h-4.5">
+                        <Badge className="text-[10px] px-2 py-0">
                           {ar ? 'النهاردة' : 'Today'}
                         </Badge>
                       )}
