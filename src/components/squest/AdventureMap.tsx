@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import {
   Flag, Sparkles, Check, SkipForward, Scissors, ChevronLeft, ChevronRight,
-  Trash2, Plus, Sun, CloudSun, Moon, Loader2, RefreshCcw, FlagTriangleBottom, Loader,
+  Trash2, Plus, Sun, CloudSun, Moon, Loader2, RefreshCcw, FlagTriangleBottom as FlagChange,
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
