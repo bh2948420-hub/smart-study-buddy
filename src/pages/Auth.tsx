@@ -14,7 +14,7 @@ import { z } from 'zod';
 const emailSchema = z.string().email('البريد الإلكتروني غير صالح');
 const passwordSchema = z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
 
-const Auth = () => {
+const Auth = ({ embedded = false, defaultTab = 'login' }: { embedded?: boolean; defaultTab?: 'login' | 'signup' } = {}) => {
   const { dir, language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -148,8 +148,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir={dir}>
-      <Card className="w-full max-w-md">
+    <div className={embedded ? '' : 'min-h-screen bg-background flex items-center justify-center p-4'} dir={dir}>
+      <Card className={embedded ? 'w-full border-0 shadow-none bg-transparent' : 'w-full max-w-md'}>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
             <GraduationCap className="h-6 w-6 text-primary" />
@@ -162,7 +162,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">
                 {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
