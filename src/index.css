@@ -126,12 +126,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'Noto Sans Arabic', system-ui, sans-serif;
+    font-family: 'Baloo Bhaijaan 2', 'Noto Sans Arabic', system-ui, sans-serif;
   }
 
   /* RTL support for Arabic */
   [dir="rtl"] {
-    font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+    font-family: 'Baloo Bhaijaan 2', 'Noto Sans Arabic', system-ui, sans-serif;
   }
 }
 
