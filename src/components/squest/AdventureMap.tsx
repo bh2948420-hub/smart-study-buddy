@@ -74,7 +74,7 @@ export function AdventureMap() {
         )}
       >
         {busy ? (
-          <Loader className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
         ) : (
           <button
             aria-label={q.status === 'done' ? (ar ? 'ارجعها' : 'Reopen') : ar ? 'خلصتها' : 'Done'}
@@ -233,7 +233,7 @@ export function AdventureMap() {
               className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2"
               onClick={() => setShowReplan(true)}
             >
-              <FlagTriangleBottom className="h-4 w-4" />
+              <Flag className="h-4 w-4" />
               {ar ? 'حصل حاجة؟ (خروج، تعب، مدرسة زودت) — وضّبط المسار من غير لوم' : 'Something changed? (outing, tiredness, extra school) — adjust the route, no guilt'}
             </button>
           ) : (
