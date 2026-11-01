@@ -4,12 +4,12 @@
 
 /* SmartEdu Design System - Educational Theme */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
     /* Educational color palette - calming blues and greens */
-    --background: 210 33% 98%;
+    --background: 250 60% 97%;
     --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
@@ -19,7 +19,7 @@
     --popover-foreground: 215 25% 15%;
 
     /* Primary - Deep Educational Blue */
-    --primary: 217 91% 50%;
+    --primary: 258 72% 58%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft Teal */
@@ -47,22 +47,27 @@
 
     --border: 214 20% 88%;
     --input: 214 20% 88%;
-    --ring: 217 91% 50%;
+    --ring: 258 72% 58%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 215 25% 12%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 18%;
+    --sidebar-background: 256 55% 32%;
+    --sidebar-foreground: 250 60% 96%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 258 72% 45%;
+    --sidebar-accent: 256 50% 42%;
     --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 215 25% 20%;
+    --sidebar-border: 256 45% 40%;
     --sidebar-ring: 217 91% 60%;
 
     /* Custom educational tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 50%), hsl(174, 42%, 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(262 80% 62%), hsl(280 75% 55%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(256 60% 38%), hsl(262 55% 26%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 100% 62%), hsl(32 100% 55%));
+    --navy: 245 55% 22%;
+    --glass: 0 0% 100%;
+    --shadow-glow: 0 10px 40px -10px hsl(262 80% 55% / 0.45);
     --gradient-hero: linear-gradient(180deg, hsl(210, 33%, 98%) 0%, hsl(210, 40%, 94%) 100%);
     --shadow-soft: 0 4px 20px -4px hsl(217 91% 50% / 0.15);
     --shadow-card: 0 2px 12px -2px hsl(215 25% 15% / 0.08);
@@ -121,12 +126,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'Noto Sans Arabic', system-ui, sans-serif;
+    font-family: 'Baloo Bhaijaan 2', 'Noto Sans Arabic', system-ui, sans-serif;
   }
 
   /* RTL support for Arabic */
   [dir="rtl"] {
-    font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+    font-family: 'Baloo Bhaijaan 2', 'Noto Sans Arabic', system-ui, sans-serif;
   }
 }
 
@@ -182,4 +187,23 @@
   .animate-bounce-gentle {
     animation: bounceGentle 2s ease-in-out infinite;
   }
+}
+
+@layer components {
+  .glass-card {
+    background: hsl(var(--glass) / 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid hsl(var(--glass) / 0.6);
+    box-shadow: var(--shadow-glow);
+    border-radius: 1.25rem;
+  }
+  .font-display { font-family: 'Baloo Bhaijaan 2', 'Noto Sans Arabic', system-ui, sans-serif; }
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-sidebar { background: var(--gradient-sidebar); }
+  .bg-gradient-gold { background: var(--gradient-gold); }
+  .text-navy { color: hsl(var(--navy)); }
+  .text-gradient-primary { background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .float-slow { animation: floatY 6s ease-in-out infinite; }
+  @keyframes floatY { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
 }

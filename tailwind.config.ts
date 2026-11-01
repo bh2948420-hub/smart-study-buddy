@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
-        arabic: ['Noto Sans Arabic', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Baloo Bhaijaan 2', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
+        arabic: ['Baloo Bhaijaan 2', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

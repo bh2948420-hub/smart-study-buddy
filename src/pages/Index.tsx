@@ -1,140 +1,126 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Navbar } from '@/components/Navbar';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import Auth from './Auth';
+import welcomeHero from '@/assets/welcome-hero.jpg';
 import {
-  GraduationCap,
-  Calendar,
-  MessageSquare,
-  Brain,
-  Coffee,
-  ArrowRight,
-  Sparkles,
+  GraduationCap, Rocket, LogIn, PlayCircle, Star, Brain, Trophy, Gift, Globe, ArrowRight, ArrowLeft,
+  Bot, Network, Swords, ClipboardCheck,
 } from 'lucide-react';
 
 const Index = () => {
-  const { t, dir } = useLanguage();
+  const { language, setLanguage, dir } = useLanguage();
+  const navigate = useNavigate();
+  const isAr = language === 'ar';
+  const [authTab, setAuthTab] = useState<'login' | 'signup' | null>(null);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const Arrow = isAr ? ArrowLeft : ArrowRight;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate('/dashboard', { replace: true });
+    });
+  }, [navigate]);
 
   const features = [
-    {
-      icon: Calendar,
-      title: t('studyPlanner'),
-      description: t('studyPlannerDesc'),
-      color: 'bg-primary/10 text-primary',
-    },
-    {
-      icon: MessageSquare,
-      title: t('aiAssistant'),
-      description: t('aiAssistantDesc'),
-      color: 'bg-accent/10 text-accent',
-    },
-    {
-      icon: Brain,
-      title: t('quizzes'),
-      description: t('quizzesDesc'),
-      color: 'bg-warning/10 text-warning',
-    },
-    {
-      icon: Coffee,
-      title: t('breakReminders'),
-      description: t('breakRemindersDesc'),
-      color: 'bg-secondary text-secondary-foreground',
-    },
+    { icon: Star, title: isAr ? 'مهام ذكية' : 'Smart Quests', sub: isAr ? 'تعلّم ممتع' : 'Fun Learning', color: 'text-warning' },
+    { icon: Brain, title: isAr ? 'المساعد الذكي' : 'AI Assistant', sub: isAr ? 'رفيق مذاكرتك' : 'Your Study Buddy', color: 'text-primary' },
+    { icon: Trophy, title: isAr ? 'تابع تقدّمك' : 'Track Progress', sub: isAr ? 'اوصل لأعلى' : 'Reach Higher', color: 'text-warning' },
+    { icon: Gift, title: isAr ? 'اكسب مكافآت' : 'Earn Rewards', sub: isAr ? 'وإنجازات' : '& Achievements', color: 'text-primary' },
+  ];
+
+  const demo = [
+    { icon: Bot, title: isAr ? 'لميس — المساعد الذكي' : 'AI Study Buddy', desc: isAr ? 'اسأل أي سؤال في دروسك واحصل على شرح مبسّط فورًا.' : 'Ask anything about your lessons and get simple explanations instantly.' },
+    { icon: ClipboardCheck, title: isAr ? 'كويزات ذكية' : 'Smart Quizzes', desc: isAr ? 'اختبارات تتولد من ملفاتك مع تصحيح تلقائي.' : 'Quizzes generated from your own files, auto-graded.' },
+    { icon: Network, title: isAr ? 'خرائط ذهنية' : 'Mind Maps', desc: isAr ? 'حوّل أي درس لخريطة ذهنية تفاعلية.' : 'Turn any lesson into an interactive mind map.' },
+    { icon: Swords, title: isAr ? 'تحديات مباشرة' : 'Live Battles', desc: isAr ? 'نافس أصحابك في كويز مباشر واكسب نقاط.' : 'Challenge friends in live quiz battles and earn XP.' },
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir={dir}>
-      <Navbar />
+    <div dir={dir} className="relative min-h-screen overflow-hidden font-display">
+      <img src={welcomeHero} alt="" className={`absolute inset-0 h-full w-full object-cover ${isAr ? 'scale-x-[-1]' : ''}`} />
+      <div className={`absolute inset-0 ${isAr ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-background/85 via-background/40 to-transparent`} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="container py-20 md:py-32">
-          <div className="max-w-3xl mx-auto text-center space-y-8 animate-fade-in">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              <span>{dir === 'rtl' ? 'مدعوم بالذكاء الاصطناعي' : 'Powered by AI'}</span>
-            </div>
-
-            {/* Title */}
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                  {t('heroTitle')}
-                </span>
-              </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground font-medium">
-                {t('heroSubtitle')}
-              </p>
-            </div>
-
-            {/* Description */}
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-              {t('heroDescription')}
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button size="lg" className="gap-2 text-base" asChild>
-                <Link to="/dashboard">
-                  {t('getStarted')}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="text-base" asChild>
-                <Link to="/chat">{t('learnMore')}</Link>
-              </Button>
-            </div>
+      <div className="relative z-10 flex min-h-screen flex-col px-5 py-5 md:px-12">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-9 w-9 text-navy" />
+            <span className="text-2xl font-extrabold text-navy">SmartEdu</span>
           </div>
-        </div>
-      </section>
+          <Button variant="outline" className="glass-card rounded-full border-0 h-10" onClick={() => setLanguage(isAr ? 'en' : 'ar')}>
+            <Globe className="h-4 w-4" /> {isAr ? 'English' : 'العربية'}
+          </Button>
+        </header>
 
-      {/* Features Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('features')}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              {dir === 'rtl'
-                ? 'كل ما تحتاجه للتفوق في دراستك'
-                : 'Everything you need to excel in your studies'}
-            </p>
+        <main className="flex flex-1 flex-col justify-center max-w-xl py-10">
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-navy">
+            {isAr ? 'رحلة تعلّمك' : 'Your learning'}<br />
+            {isAr ? 'بتبدأ ' : 'journey '}
+            <span className="text-gradient-primary">{isAr ? 'من هنا!' : 'starts here!'}</span>
+          </h1>
+          <p className="mt-5 text-2xl font-bold text-navy">{isAr ? 'استكشف. اتعلّم. حقّق.' : 'Explore. Learn. Achieve.'}</p>
+          <p className="mt-3 border-s-4 border-primary ps-3 text-base text-navy/80 max-w-md">
+            {isAr
+              ? 'SmartEdu رفيقك الذكي في التعلّم، بيساعدك تذاكر بذكاء وتوصل لأهدافك.'
+              : 'SmartEdu is your personalized AI learning companion, helping you study smarter and reach your goals.'}
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button size="lg" className="rounded-full bg-gradient-primary h-12 px-7 text-base shadow-lg" onClick={() => setAuthTab('signup')}>
+              <Rocket className="h-5 w-5" /> {isAr ? 'إنشاء حساب' : 'Create Account'} <Arrow className="h-4 w-4" />
+            </Button>
+            <Button size="lg" variant="outline" className="glass-card rounded-full h-12 px-7 text-base text-navy" onClick={() => setAuthTab('login')}>
+              <LogIn className="h-5 w-5" /> {isAr ? 'تسجيل الدخول' : 'Login'}
+            </Button>
           </div>
+          <div className="mt-3 w-fit ps-24 text-sm text-navy/60">{isAr ? 'أو' : 'or'}</div>
+          <Button variant="outline" className="glass-card mt-2 w-fit rounded-full h-10 px-5 text-navy" onClick={() => setDemoOpen(true)}>
+            <PlayCircle className="h-5 w-5 text-primary" /> {isAr ? 'شاهد العرض' : 'Watch Demo'}
+          </Button>
+        </main>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={feature.title}
-                className="group p-6 rounded-xl bg-card border border-border shadow-card hover:shadow-soft transition-all duration-300 hover:-translate-y-1"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div
-                  className={`inline-flex p-3 rounded-lg ${feature.color} mb-4 transition-transform group-hover:scale-110`}
-                >
-                  <feature.icon className="h-6 w-6" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {feature.description}
-                </p>
+        <footer className="glass-card mx-auto grid w-full max-w-4xl grid-cols-2 gap-4 p-4 md:grid-cols-4">
+          {features.map((f) => (
+            <div key={f.title} className="flex items-center gap-3">
+              <f.icon className={`h-8 w-8 shrink-0 ${f.color}`} />
+              <div>
+                <div className="font-bold text-navy leading-tight">{f.title}</div>
+                <div className="text-xs text-muted-foreground">{f.sub}</div>
+              </div>
+            </div>
+          ))}
+        </footer>
+      </div>
+
+      <Dialog open={authTab !== null} onOpenChange={(o) => !o && setAuthTab(null)}>
+        <DialogContent className="glass-card max-w-md">
+          <DialogTitle className="sr-only">{isAr ? 'تسجيل الدخول' : 'Sign in'}</DialogTitle>
+          {authTab && <Auth embedded defaultTab={authTab} key={authTab} />}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+        <DialogContent className="glass-card max-w-2xl" dir={dir}>
+          <DialogTitle className="text-2xl font-extrabold text-navy font-display">
+            {isAr ? 'اكتشف SmartEdu' : 'Discover SmartEdu'}
+          </DialogTitle>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {demo.map((d, i) => (
+              <div key={d.title} className="rounded-2xl bg-background/70 p-4 float-slow" style={{ animationDelay: `${i * 0.4}s` }}>
+                <d.icon className="h-8 w-8 text-primary" />
+                <div className="mt-2 font-bold text-navy">{d.title}</div>
+                <p className="text-sm text-muted-foreground">{d.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 border-t border-border">
-        <div className="container text-center text-muted-foreground text-sm">
-          <p>© 2024 SmartEdu. {dir === 'rtl' ? 'جميع الحقوق محفوظة' : 'All rights reserved'}.</p>
-        </div>
-      </footer>
+          <Button className="rounded-full bg-gradient-primary" onClick={() => { setDemoOpen(false); setAuthTab('signup'); }}>
+            {isAr ? 'ابدأ رحلتك دلوقتي' : 'Start your journey'}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
