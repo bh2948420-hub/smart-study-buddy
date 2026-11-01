@@ -17,7 +17,7 @@ export function TodayQuests({ onGoLife }: { onGoLife: () => void }) {
   const { language } = useLanguage();
   const {
     quests, loading, energy, setEnergy,
-    completeQuest, skipQuest, splitQuest, replan, planning,
+    completeQuest, skipQuest, splitQuest, replan, planning, reopenQuest,
   } = useSmartQuest();
   const ar = language === 'ar';
   const today = dayIndexOf();
@@ -148,7 +148,7 @@ export function TodayQuests({ onGoLife }: { onGoLife: () => void }) {
                   )}
                   {q.status !== 'pending' && (
                     <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={ar ? 'ارجعها' : 'Reopen'}
-                      onClick={() => act(q.id, () => useSmartQuestReopen(q.id))}>
+                      onClick={() => act(q.id, () => reopenQuest(q.id))}>
                       <RefreshCcw className="h-3.5 w-3.5" />
                     </Button>
                   )}
