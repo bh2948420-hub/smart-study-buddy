@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Bell, CheckCheck, Globe, Menu, Menu as NotificationsIcon, Target, Flame, Star } from 'lucide-react';
+import { Bell, CheckCheck, Globe, Menu } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
 
 interface DashHeaderProps {
@@ -19,9 +19,8 @@ export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHe
   const navigate = useNavigate();
   const ar = language === 'ar';
 
-  // Sparkle emphasis on the greeting, like the reference image.
   return (
-    <header className="mb-6 flex items-start justify-between gap-4">
+    <header className="mb-6 flex items-start justify-between gap-4" dir={dir}>
       <div className="min-w-0">
         <h1 className="truncate font-display text-3xl font-extrabold text-navy md:text-4xl">
           {ar ? 'أهلًا' : 'Hello'}, {name}! <span className="inline-block animate-bounce-gentle">✨</span>
@@ -79,19 +78,15 @@ export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHe
   );
 };
 
-// Lazy-imported dropdown body lives in the same file for simplicity.
-import { useNotifications } from '@/hooks/useNotifications';
-import { useNavigate as useNav } from 'react-router-dom';
-
 const NotificationsDropdown = () => {
   const { language, dir } = useLanguage();
   const { notifications, markAllAsRead, markAsRead } = useNotifications();
-  const navigate = useNav();
+  const navigate = useNavigate();
   const ar = language === 'ar';
   const recent = notifications.slice(0, 6);
 
   return (
-    <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto" dir={dir}>
+    <DropdownMenuContent align="end" className="max-h-96 w-80 overflow-y-auto" dir={dir}>
       <div className="flex items-center justify-between px-2 py-1.5">
         <span className="font-bold text-navy">{ar ? 'الإشعارات' : 'Notifications'}</span>
         <button className="flex items-center gap-1 text-xs font-bold text-primary" onClick={() => markAllAsRead()}>
@@ -119,6 +114,3 @@ const NotificationsDropdown = () => {
     </DropdownMenuContent>
   );
 };
-
-// Re-export icons used by stat cards so the header file stays the design single-source.
-export const StatIcons = { Target, Flame, Star, NotificationsIcon };
