@@ -79,14 +79,14 @@ export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHe
 };
 
 const NotificationsDropdown = () => {
-  const { language, dir } = useLanguage();
+  const { language } = useLanguage();
   const { notifications, markAllAsRead, markAsRead } = useNotifications();
   const navigate = useNavigate();
   const ar = language === 'ar';
   const recent = notifications.slice(0, 6);
 
   return (
-    <DropdownMenuContent align="end" className="max-h-96 w-80 overflow-y-auto" dir={dir}>
+    <DropdownMenuContent align="end" className="max-h-96 w-80 overflow-y-auto">
       <div className="flex items-center justify-between px-2 py-1.5">
         <span className="font-bold text-navy">{ar ? 'الإشعارات' : 'Notifications'}</span>
         <button className="flex items-center gap-1 text-xs font-bold text-primary" onClick={() => markAllAsRead()}>
