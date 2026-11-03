@@ -45,7 +45,7 @@ export const DashPlanCard = ({ tasks }: { tasks: TaskLike[] }) => {
         {shown.map((t) => (
           <div key={t.id} className="flex items-center gap-2 text-sm font-bold text-navy">
             {t.completed ? (
-              <CheckCircle2 className="h-4.5 w-4.5 h-5 w-5 shrink-0 text-success" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
             ) : (
               <Circle className="h-5 w-5 shrink-0 text-muted-foreground/60" />
             )}

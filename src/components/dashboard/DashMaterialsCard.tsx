@@ -29,7 +29,7 @@ export const DashMaterialsCard = ({ counts }: { counts: MaterialCounts }) => {
   const countFor = (key: string) =>
     key === 'more' ? counts.document : key === 'book' ? counts.pdf + counts.video + counts.image + counts.audio + counts.document : (counts as any)[key] ?? 0;
 
-  const open = (key: string) => navigate(`/materials${key !== 'book' ? `?type=${key}` : ''}`);
+  const open = (_key: string) => navigate('/materials');
 
   return (
     <div className="glass-card flex min-h-[240px] flex-col rounded-3xl p-5">

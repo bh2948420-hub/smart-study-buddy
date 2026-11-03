@@ -12,10 +12,19 @@ export const DashLeaderboardCard = () => {
   const navigate = useNavigate();
   const ar = language === 'ar';
   const { data: entries, isLoading } = useLeaderboard('weekly', 'xp');
-  const [myId, setMyId] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? null));
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      setMyName((data as any)?.display_name ?? null);
+    })();
   }, []);
 
   const top = (entries || []).slice(0, 3);
@@ -39,7 +48,7 @@ export const DashLeaderboardCard = () => {
       <div className="mt-3 flex flex-1 flex-col justify-center gap-2">
         {isLoading && <p className="text-sm font-bold text-muted-foreground">{ar ? 'جاري التحميل...' : 'Loading...'}</p>}
         {!isLoading && top.length === 0 && (
-          <p className="text-sm font-bold text-muted-foreground">{ar ? 'افتحي كويزات واكتسب XP علشان تتصدرى!' : 'Earn XP to climb the board!'}</p>
+          <p className="text-sm font-bold text-muted-foreground">{ar ? 'اكتسب XP من الكويزات علشان تتصدري!' : 'Earn XP to climb the board!'}</p>
         )}
         {top.map((e: LeaderboardEntry, i: number) => (
           <div
@@ -50,7 +59,7 @@ export const DashLeaderboardCard = () => {
               <span className="text-lg">{medal[i]}</span>
               <span className={`truncate text-sm font-extrabold ${e.rank === 1 ? 'text-white' : 'text-navy'}`}>
                 {e.display_name}
-                {myId && e.user_id === myId ? (ar ? ' (أنتِ)' : ' (You)') : ''}
+                {myName && e.display_name === myName ? (ar ? ' (أنتِ)' : ' (You)') : ''}
               </span>
             </div>
             <span className={`flex shrink-0 items-center gap-1 text-xs font-extrabold ${e.rank === 1 ? 'text-white' : 'text-warning'}`}>
