@@ -1,16 +1,19 @@
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Bell, CheckCheck, Globe, Menu } from 'lucide-react';
+import { Bell, CheckCheck, Globe } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
+import { DashMobileNav } from './DashMobileNav';
 
 interface DashHeaderProps {
   name: string;
   avatarUrl: string | null;
   unreadCount: number;
-  onMenuClick: () => void;
+  onMenuClick?: () => void;
+  actions?: ReactNode;
 }
 
 // Top header: greeting + language / notifications / profile controls.
