@@ -1,61 +1,49 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Navbar } from '@/components/Navbar';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { isSameDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTasks } from '@/hooks/useTasks';
-import { useStudySessions } from '@/hooks/useStudySessions';
 import { useStats } from '@/hooks/useStats';
+import { useProfile } from '@/hooks/useProfile';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useMaterials } from '@/hooks/useMaterials';
+import { useSmartQuest } from '@/hooks/useSmartQuest';
 import { useDataSync } from '@/hooks/useDataSync';
 import { useStreakRecovery } from '@/hooks/useStreakRecovery';
-import { TaskList, AddTaskForm, TaskCalendar } from '@/components/tasks';
-import { PomodoroTimer } from '@/components/study/PomodoroTimer';
-import { StatsCards } from '@/components/dashboard/StatsCards';
-import { DailyQuizWidget } from '@/components/dashboard/DailyQuizWidget';
-import { WeeklyChallenges } from '@/components/challenges/WeeklyChallenges';
-import { RecentQuizResults } from '@/components/dashboard/RecentQuizResults';
-import { FocusSessionSummary } from '@/components/dashboard/FocusSessionSummary';
-import { StreakRecoveryDialog } from '@/components/streak/StreakRecoveryDialog';
-import { StreakWinnersPanel } from '@/components/dashboard/StreakWinnersPanel';
-import {
-  CalendarDays,
-  List,
-  Brain,
-  LogOut,
-  Loader2,
-  Play,
-  FolderOpen,
-  MessageSquare,
-  Focus,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { isSameDay } from 'date-fns';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
-import { TodayStudyPlan } from '@/components/dashboard/TodayStudyPlan';
-import { SubjectMasteryRadar } from '@/components/dashboard/SubjectMasteryRadar';
-import { AIPerformancePredictor } from '@/components/dashboard/AIPerformancePredictor';
+import { StreakRecoveryDialog } from '@/components/streak/StreakRecoveryDialog';
 import { RankCelebration } from '@/components/celebrations/RankCelebration';
-import { StreakBadges } from '@/components/streak/StreakBadges';
-import { SmartDailyChallenge } from '@/components/dashboard/SmartDailyChallenge';
+import { ScheduleReuploadButton } from '@/components/dashboard/ScheduleReuploadButton';
+import { DashSidebar } from '@/components/dashboard/DashSidebar';
+import { DashHeader } from '@/components/dashboard/DashHeader';
+import { DashStatCards } from '@/components/dashboard/DashStatCards';
+import { DashAssistantCard } from '@/components/dashboard/DashAssistantCard';
+import { DashPlanCard } from '@/components/dashboard/DashPlanCard';
+import { DashQuestCard } from '@/components/dashboard/DashQuestCard';
+import { DashMaterialsCard, MaterialCounts } from '@/components/dashboard/DashMaterialsCard';
+import { DashQuizCard } from '@/components/dashboard/DashQuizCard';
+import { DashReportsCard } from '@/components/dashboard/DashReportsCard';
+import { DashLeaderboardCard } from '@/components/dashboard/DashLeaderboardCard';
+import { DashTipBar } from '@/components/dashboard/DashTipBar';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
-  const { t, dir, language } = useLanguage();
+  const { dir, language } = useLanguage();
   const navigate = useNavigate();
-  const [view, setView] = useState<'calendar' | 'list'>('list');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showTimer, setShowTimer] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
-  
+
   const { tasks, loading, addTask, toggleTask, deleteTask } = useTasks();
-  const { sessions, activeSession, startSession, endSession, getTodayStats } = useStudySessions();
   const { stats } = useStats();
-  const { syncTaskComplete, syncFocusSession } = useDataSync();
+  const { profile } = useProfile();
+  const { unreadCount } = useNotifications();
+  const { materials } = useMaterials();
+  const { quests: sqQuests } = useSmartQuest();
+  const { syncTaskComplete } = useDataSync();
   const {
     showRecoveryDialog,
     previousStreak,
@@ -65,15 +53,10 @@ const Dashboard = () => {
     closeDialog,
   } = useStreakRecovery();
 
-  const todayStats = getTodayStats();
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const focusPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
-
   // Enhanced toggleTask with XP sync
   const handleToggleTask = async (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (task && !task.completed) {
-      // Task is being completed
       await toggleTask(taskId);
       await syncTaskComplete(taskId);
       toast.success(language === 'ar' ? '+10 XP!' : '+10 XP!');
@@ -94,7 +77,7 @@ const Dashboard = () => {
           .select('onboarding_completed')
           .eq('user_id', session.user.id)
           .maybeSingle();
-        
+
         if (profile && !(profile as any).onboarding_completed) {
           setShowOnboarding(true);
         }
@@ -114,40 +97,36 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
-  };
+  // Tasks due today — feed the "My Study Plan" card
+  const todayTasks = tasks.filter((task) => isSameDay(new Date(task.due_date), new Date()));
 
-  const handleStartQuiz = () => {
-    navigate('/quizzes');
-  };
-
-  const handleStartStudy = async () => {
-    if (activeSession) {
-      await endSession();
-      setShowTimer(false);
-    } else {
-      setShowTimer(true);
-      await startSession();
-    }
-  };
-
-  const handleSessionComplete = async (duration: number) => {
-    if (activeSession) {
-      await endSession();
-    }
-  };
-
-  // Filter tasks for today
-  const todayTasks = tasks.filter((task) =>
-    isSameDay(new Date(task.due_date), new Date())
+  // Weekly goal: distinct days with at least one completed task this week (Sat → Fri)
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 1) % 7));
+  weekStart.setHours(0, 0, 0, 0);
+  const activeDays = new Set(
+    tasks
+      .filter((t) => t.completed && new Date(t.due_date) >= weekStart)
+      .map((t) => new Date(t.due_date).toDateString())
   );
+  const weeklyGoalDone = Math.min(7, activeDays.size);
 
-  // Filter tasks for selected date
-  const selectedDateTasks = selectedDate
-    ? tasks.filter((task) => isSameDay(new Date(task.due_date), selectedDate))
-    : [];
+  // Smart Quest treasure-map progress for the current week
+  const sqDone = sqQuests.filter((q) => q.status === 'done').length;
+  const questPercent = sqQuests.length > 0 ? (sqDone / sqQuests.length) * 100 : 0;
+
+  // Material-type counts for the "My Materials" tile grid
+  const materialCounts: MaterialCounts = {
+    pdf: materials.filter((m) => m.file_type === 'pdf').length,
+    video: materials.filter((m) => m.file_type === 'video').length,
+    image: materials.filter((m) => m.file_type === 'image').length,
+    audio: materials.filter((m) => m.file_type === 'audio').length,
+    document: materials.filter((m) => ['document', 'other'].includes(m.file_type)).length,
+  };
+
+  const name = profile?.display_name || user?.email?.split('@')[0] || (language === 'ar' ? 'زميلتي' : 'Student');
+  const streakDays = profile?.streak_days ?? stats.streakDays;
+  const totalPoints = profile?.xp_points ?? 0;
 
   if (authLoading || !onboardingChecked) {
     return (
@@ -163,199 +142,89 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background" dir={dir}>
-      <Navbar />
+      <DashSidebar />
 
-      {/* Streak Recovery Dialog */}
-      <StreakRecoveryDialog
-        open={showRecoveryDialog}
-        onOpenChange={closeDialog}
-        previousStreak={previousStreak}
-        currentXP={currentXP}
-        onRecover={recoverStreak}
-        onDecline={declineRecovery}
-      />
-
-      <main className="container py-8 space-y-6">
-        {/* Welcome Section */}
-        <div className="animate-fade-in flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              {t('welcomeBack')}, <span className="text-primary">{user?.email?.split('@')[0] || t('student')}!</span>
-            </h1>
-            <p className="text-muted-foreground">
-              {language === 'ar'
-                ? 'إليك نظرة عامة على مهامك لليوم'
-                : "Here's an overview of your tasks for today"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ScheduleReuploadButton onTasksCreated={() => { /* tasks will refresh via useTasks */ window.location.reload(); }} />
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              {language === 'ar' ? 'خروج' : 'Logout'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <StatsCards
-          totalStudyMinutes={todayStats.totalMinutes}
-          completedTasks={completedTasks}
-          totalTasks={tasks.length}
-          focusPercentage={focusPercentage}
-          upcomingTests={0}
-          streakDays={stats.streakDays}
-          averageScore={stats.averageScore}
+      <div className="min-h-screen px-4 py-6 sm:px-6 lg:ps-[17.5rem] lg:pe-8">
+        <DashHeader
+          name={name}
+          avatarUrl={profile?.avatar_url ?? null}
+          unreadCount={unreadCount}
+          onMenuClick={() => {}}
+          actions={<ScheduleReuploadButton onTasksCreated={() => window.location.reload()} />}
         />
 
-        {/* Smart Daily Challenge */}
-        <SmartDailyChallenge />
+        {/* Streak Recovery Dialog */}
+        <StreakRecoveryDialog
+          open={showRecoveryDialog}
+          onOpenChange={closeDialog}
+          previousStreak={previousStreak}
+          currentXP={currentXP}
+          onRecover={recoverStreak}
+          onDecline={declineRecovery}
+        />
 
-        {/* Rank Celebration */}
+        {/* Rank up celebration overlay */}
         <RankCelebration />
 
+        <div className="animate-fade-in">
+          <DashStatCards weeklyGoalDone={weeklyGoalDone} streakDays={streakDays} totalPoints={totalPoints} />
 
-        {/* Subject Mastery Radar */}
-        <SubjectMasteryRadar />
-
-        {/* Streak Badges */}
-        <StreakBadges />
-        {/* Study Plan */}
-        <TodayStudyPlan />
-
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Content - Study Planner */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* View Toggle & Add Task */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
-                <Button
-                  variant={view === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setView('list')}
-                  className="gap-2"
-                >
-                  <List className="h-4 w-4" />
-                  {t('viewList')}
-                </Button>
-                <Button
-                  variant={view === 'calendar' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setView('calendar')}
-                  className="gap-2"
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  {t('viewCalendar')}
-                </Button>
-              </div>
-
-              <AddTaskForm onAddTask={addTask} selectedDate={selectedDate} />
-            </div>
-
-            {/* Calendar View */}
-            {view === 'calendar' && (
-              <TaskCalendar
-                tasks={tasks}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-              />
-            )}
-
-            {/* Task List */}
-            <TaskList
-              tasks={view === 'calendar' ? selectedDateTasks : todayTasks}
-              loading={loading}
+          {/* Assistant + Study Plan + Treasure Map row */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <DashAssistantCard />
+            <DashPlanCard
+              tasks={todayTasks}
               onToggle={handleToggleTask}
-              onDelete={deleteTask}
-              title={view === 'calendar' 
-                ? (language === 'ar' ? 'مهام التاريخ المحدد' : 'Tasks for Selected Date')
-                : t('todayTasks')
-              }
+              loading={loading}
+              onAdd={(title) => addTask({ title, due_date: new Date().toISOString() })}
             />
+            <DashQuestCard percent={questPercent} />
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* AI Performance Predictor */}
-            <AIPerformancePredictor />
-
-            {/* Streak Winners */}
-            <StreakWinnersPanel />
-
-            {/* Focus Session Summary - Links to Focus Mode */}
-            <FocusSessionSummary />
-
-            {/* Recent Quiz Results - Links to Quizzes */}
-            <RecentQuizResults />
-
-            {/* Daily Quiz Widget */}
-            <DailyQuizWidget />
-
-            {/* Pomodoro Timer */}
-            {showTimer && (
-              <PomodoroTimer onSessionComplete={handleSessionComplete} />
-            )}
-
-            {/* Weekly Challenges */}
-            <WeeklyChallenges />
-
-            {/* Quick Actions */}
-            <Card className="animate-slide-up">
-              <CardHeader>
-                <CardTitle>
-                  {language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  className="w-full gap-2 justify-start"
-                  variant="default"
-                  onClick={() => navigate('/focus')}
-                >
-                  <Focus className="h-5 w-5" />
-                  {language === 'ar' ? 'وضع التركيز' : 'Focus Mode'}
-                </Button>
-                <Button
-                  className="w-full gap-2 justify-start"
-                  variant={activeSession ? 'destructive' : 'outline'}
-                  onClick={handleStartStudy}
-                >
-                  <Play className="h-5 w-5" />
-                  {activeSession 
-                    ? (language === 'ar' ? 'إنهاء الجلسة' : 'End Session')
-                    : (language === 'ar' ? 'ابدأ الدراسة' : 'Start Study')
-                  }
-                </Button>
-                <Button
-                  className="w-full gap-2 justify-start"
-                  variant="outline"
-                  onClick={handleStartQuiz}
-                >
-                  <Brain className="h-5 w-5 text-primary" />
-                  {t('startQuiz')}
-                </Button>
-                <Button
-                  className="w-full gap-2 justify-start"
-                  variant="outline"
-                  onClick={() => navigate('/materials')}
-                >
-                  <FolderOpen className="h-5 w-5 text-accent" />
-                  {language === 'ar' ? 'المواد الدراسية' : 'Study Materials'}
-                </Button>
-                <Button
-                  className="w-full gap-2 justify-start"
-                  variant="outline"
-                  onClick={() => navigate('/chat')}
-                >
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  {language === 'ar' ? 'مساعد الدراسة' : 'Study Assistant'}
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Materials + Quizzes + Reports row */}
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <DashMaterialsCard counts={materialCounts} />
+            <DashQuizCard />
+            <DashReportsCard />
           </div>
+
+          {/* Leaderboard row */}
+          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <div className="xl:col-span-2">
+              <DashLeaderboardCard />
+            </div>
+            <DashTipCardMini />
+          </div>
+
+          <DashTipBar />
         </div>
-      </main>
+      </div>
     </div>
+  );
+};
+
+// Small companion card next to the leaderboard — quick jump to Focus Mode
+// so the full-screen focus experience stays one tap away.
+const DashTipCardMini = () => {
+  const navigate = useNavigate();
+  const { language } = useLanguage();
+  const ar = language === 'ar';
+  return (
+    <button
+      onClick={() => navigate('/focus')}
+      className="glass-card flex min-h-[240px] flex-col items-start justify-between rounded-3xl p-5 text-start transition-transform hover:scale-[1.01]"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent">🎯</div>
+      <div>
+        <h3 className="font-display text-lg font-extrabold text-navy">{ar ? 'وضع التركيز' : 'Focus Mode'}</h3>
+        <p className="mt-1 text-xs font-bold text-muted-foreground">
+          {ar ? 'مؤقت بومودورو + أصوات هادية تساعدك تركز' : 'Pomodoro timer + calm sounds for deep focus'}
+        </p>
+        <span className="mt-3 inline-block rounded-full bg-gradient-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground shadow-glow">
+          {ar ? 'ابدأ جلسة' : 'Start a Session'}
+        </span>
+      </div>
+    </button>
   );
 };
 
