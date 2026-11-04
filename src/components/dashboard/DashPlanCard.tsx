@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Loader2, Plus } from 'lucide-react';
 import { CalendarCheck2, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
 
 interface TaskLike {
@@ -8,17 +10,34 @@ interface TaskLike {
   completed: boolean;
 }
 
+interface DashPlanCardProps {
+  tasks: TaskLike[];
+  onToggle?: (id: number) => void;
+  onAdd?: (title: string) => void;
+  loading?: boolean;
+}
+
 // "My Study Plan" card from the reference design:
-// today's tasks checklist + the date badge + link to the full planner.
-export const DashPlanCard = ({ tasks }: { tasks: TaskLike[] }) => {
+// today's interactive tasks checklist + quick add + the date badge + link to
+// the full planner in the Study Hub.
+export const DashPlanCard = ({ tasks, onToggle, onAdd, loading }: DashPlanCardProps) => {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const ar = language === 'ar';
+  const [draft, setDraft] = useState('');
 
   const today = new Date();
   const dayName = today.toLocaleDateString(ar ? 'ar-EG' : 'en-US', { weekday: 'short' });
   const dateLabel = today.toLocaleDateString(ar ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short' });
   const shown = tasks.slice(0, 4);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = draft.trim();
+    if (!title || !onAdd) return;
+    onAdd(title);
+    setDraft('');
+  };
 
   return (
     <div className="glass-card flex min-h-[220px] flex-col rounded-3xl p-5">
@@ -39,20 +58,45 @@ export const DashPlanCard = ({ tasks }: { tasks: TaskLike[] }) => {
 
       <p className="mt-3 text-xs font-bold text-muted-foreground">{ar ? 'مهام النهاردة' : "Today's Tasks"}</p>
       <div className="mt-2 flex flex-1 flex-col justify-center gap-2.5">
-        {shown.length === 0 && (
+        {loading && shown.length === 0 && (
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        )}
+        {!loading && shown.length === 0 && (
           <p className="text-sm font-bold text-muted-foreground/80">{ar ? 'مفيش مهام النهاردة — ضيف واحدة!' : 'No tasks today — add one!'}</p>
         )}
         {shown.map((t) => (
-          <div key={t.id} className="flex items-center gap-2 text-sm font-bold text-navy">
+          <button
+            key={t.id}
+            onClick={() => onToggle?.(t.id)}
+            className="flex items-center gap-2 text-start text-sm font-bold text-navy transition-opacity hover:opacity-80"
+          >
             {t.completed ? (
               <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
             ) : (
               <Circle className="h-5 w-5 shrink-0 text-muted-foreground/60" />
             )}
             <span className={t.completed ? 'line-through opacity-60' : ''}>{t.title}</span>
-          </div>
+          </button>
         ))}
       </div>
+
+      {onAdd && (
+        <form onSubmit={submit} className="mt-3 flex items-center gap-2 rounded-2xl bg-background/70 p-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={ar ? 'ضيف مهمة سريعة...' : 'Quick add a task...'}
+            className="min-w-0 flex-1 bg-transparent px-1 text-sm font-semibold text-navy outline-none placeholder:text-muted-foreground/70"
+          />
+          <button
+            type="submit"
+            aria-label={ar ? 'ضيف' : 'Add'}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </form>
+      )}
 
       <div className="mt-3 flex items-center justify-between">
         <div className="rounded-2xl bg-primary/10 px-4 py-2 text-center">
