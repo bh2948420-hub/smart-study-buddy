@@ -10,7 +10,7 @@ import { useMessages, Message } from '@/hooks/useMessages';
 import { CurriculumUploader } from '@/components/chat/CurriculumUploader';
 import { useCurriculum } from '@/hooks/useCurriculum';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -18,6 +18,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const Chat = () => {
   const { t, dir, language } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { messages, loading, clearMessages, setMessages, addMessage } = useMessages();
   const { getCurriculumContext } = useCurriculum();
@@ -28,6 +29,13 @@ const Chat = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { initialMessage?: string } | null;
+    if (!state?.initialMessage) return;
+    setInput(state.initialMessage);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.key, location.pathname, location.state, navigate]);
 
   // Check auth
   useEffect(() => {

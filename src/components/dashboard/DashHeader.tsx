@@ -17,7 +17,7 @@ interface DashHeaderProps {
 }
 
 // Top header: greeting + language / notifications / profile controls.
-export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHeaderProps) => {
+export const DashHeader = ({ name, avatarUrl, unreadCount, actions }: DashHeaderProps) => {
   const { language, setLanguage, dir } = useLanguage();
   const navigate = useNavigate();
   const ar = language === 'ar';
@@ -34,10 +34,7 @@ export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHe
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {/* Mobile menu */}
-        <Button variant="ghost" size="icon" className="glass-card rounded-full border-0 text-navy lg:hidden" onClick={onMenuClick} aria-label="Menu">
-          <Menu className="h-5 w-5" />
-        </Button>
+        <DashMobileNav />
 
         {/* Language switch */}
         <DropdownMenu>
@@ -52,6 +49,8 @@ export const DashHeader = ({ name, avatarUrl, unreadCount, onMenuClick }: DashHe
             <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {actions}
 
         {/* Notifications */}
         <DropdownMenu>

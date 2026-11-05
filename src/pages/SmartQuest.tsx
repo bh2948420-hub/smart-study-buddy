@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DashSidebar } from '@/components/dashboard/DashSidebar';
+import { DashHeader } from '@/components/dashboard/DashHeader';
+import { useProfile } from '@/hooks/useProfile';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Compass, Map, Sun, Brain, HeartHandshake, LogIn } from 'lucide-react';
@@ -14,10 +18,20 @@ import { cn } from '@/lib/utils';
 type Tab = 'map' | 'today' | 'mind' | 'life';
 
 export default function SmartQuest() {
-  const { language } = useLanguage();
+  const { language, dir } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { profile } = useProfile();
+  const { unreadCount } = useNotifications();
   const [checking, setChecking] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
-  const [tab, setTab] = useState<Tab>('map');
+  const requestedTab = searchParams.get('tab');
+  const tab: Tab = requestedTab === 'today' || requestedTab === 'mind' || requestedTab === 'life' ? requestedTab : 'map';
+  const selectTab = (next: Tab) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'map') params.delete('tab');
+    else params.set('tab', next);
+    setSearchParams(params);
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -67,8 +81,14 @@ export default function SmartQuest() {
     );
   }
 
+  const pageName = profile?.display_name || (language === 'ar' ? 'زميلتي' : 'Student');
+
   return (
-    <div className="container py-6 space-y-6">
+    <div className="min-h-screen bg-background" dir={dir}>
+      <DashSidebar />
+      <main className="px-4 py-6 sm:px-6 lg:ps-[17.5rem] lg:pe-8">
+        <DashHeader name={pageName} avatarUrl={profile?.avatar_url ?? null} unreadCount={unreadCount} />
+        <div className="container space-y-6 py-2">
       {/* Hero banner */}
       <div className="relative overflow-hidden rounded-2xl border bg-primary/5 px-6 py-8 text-center">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--primary)_0%,transparent_60%)] opacity-[0.07]" />
@@ -93,7 +113,7 @@ export default function SmartQuest() {
         {tabs.map((tb) => (
           <button
             key={tb.id}
-            onClick={() => setTab(tb.id)}
+            onClick={() => selectTab(tb.id)}
             className={cn(
               'flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-xs sm:text-sm font-medium transition-all',
               tab === tb.id
@@ -108,9 +128,11 @@ export default function SmartQuest() {
       </div>
 
       {tab === 'map' && <AdventureMap />}
-      {tab === 'today' && <TodayQuests onGoLife={() => setTab('life')} />}
-      {tab === 'mind' && <MindSpace onGoMap={() => setTab('map')} />}
+      {tab === 'today' && <TodayQuests onGoLife={() => selectTab('life')} />}
+      {tab === 'mind' && <MindSpace onGoMap={() => selectTab('map')} />}
       {tab === 'life' && <MyLife />}
+        </div>
+      </main>
     </div>
   );
 }

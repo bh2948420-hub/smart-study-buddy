@@ -5,3 +5,4 @@
 - Primary model is `gemini-3.8-flash` with automatic failover (`gemini-3.6-flash` → `gemini-flash-lite-latest`) on 503 overload; implemented in `supabase/functions/_shared/gemini.ts`. Why: the primary model sometimes has demand spikes during demos.
 - Do not edit `src/integrations/supabase/previewAuthStorage.ts` — it is platform-managed preview auth plumbing.
 - Keep the codebase free of platform-branded dependencies and metadata (e.g. no `lovable-tagger`, no platform og:image/twitter tags in `index.html`). Why: the repository is presented as the student's own work.
+- Keep the dashboard, study hub, and SmartQuest destinations on the shared student navigation shell. Why: dashboard shortcuts should open complete, connected feature pages on desktop and mobile.
