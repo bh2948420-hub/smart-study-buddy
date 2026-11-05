@@ -158,7 +158,7 @@ const StudyHub = () => {
                 className={cn(
                   'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold transition-all',
                   tab === tb.id
-                    ? 'bg-gradient-sidebar text-white shadow-glow'
+                    ? 'bg-gradient-sidebar text-primary-foreground shadow-glow'
                     : 'glass-card text-navy hover:scale-[1.03]'
                 )}
               >

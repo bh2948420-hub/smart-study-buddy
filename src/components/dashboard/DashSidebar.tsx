@@ -17,7 +17,7 @@ export function useDashNavItems(): DashNavItem[] {
     { to: '/dashboard', label: ar ? 'الرئيسية' : 'Home', icon: Home, end: true },
     { to: '/chat', label: ar ? 'المساعد الذكي' : 'AI Assistant', icon: Bot },
     { to: '/materials', label: ar ? 'موادي الدراسية' : 'My Materials', icon: BookOpen },
-    { to: '/dashboard?view=plan', label: ar ? 'خطة مذاكرتي' : 'My Study Plan', icon: CalendarDays },
+    { to: '/study-hub?tab=plan', label: ar ? 'خطة مذاكرتي' : 'My Study Plan', icon: CalendarDays },
     { to: '/quest', label: ar ? 'رحلة SmartQuest' : 'Smart Quest', icon: Compass },
     { to: '/quest?tab=mind', label: ar ? 'عقلي' : 'Mind Space', icon: Network },
     { to: '/quizzes', label: ar ? 'الاختبارات' : 'Quizzes', icon: ClipboardCheck },

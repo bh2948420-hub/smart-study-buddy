@@ -23,6 +23,8 @@ import FocusMode from "./pages/FocusMode";
 import Challenge from "./pages/Challenge";
 import SupportRoom from "./pages/SupportRoom";
 import NotFound from "./pages/NotFound";
+import StudyHub from "./pages/StudyHub";
+import SmartQuest from "./pages/SmartQuest";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/study-hub" element={<StudyHub />} />
+            <Route path="/quest" element={<SmartQuest />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />

@@ -28,6 +28,7 @@ import { DashReportsCard } from '@/components/dashboard/DashReportsCard';
 import { DashLeaderboardCard } from '@/components/dashboard/DashLeaderboardCard';
 import { DashTipBar } from '@/components/dashboard/DashTipBar';
 import { toast } from 'sonner';
+import dashboardHero from '@/assets/dashboard-hero.jpg';
 
 const Dashboard = () => {
   const { dir, language } = useLanguage();
@@ -144,14 +145,25 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background" dir={dir}>
       <DashSidebar />
 
-      <div className="min-h-screen px-4 py-6 sm:px-6 lg:ps-[17.5rem] lg:pe-8">
-        <DashHeader
-          name={name}
-          avatarUrl={profile?.avatar_url ?? null}
-          unreadCount={unreadCount}
-          onMenuClick={() => {}}
-          actions={<ScheduleReuploadButton onTasksCreated={() => window.location.reload()} />}
-        />
+      <div className="relative isolate min-h-screen px-3 py-4 sm:px-5 lg:ps-[17.5rem] lg:pe-8">
+        <section className="relative mb-5 overflow-hidden rounded-3xl border border-border/60 shadow-card">
+          <img
+            src={dashboardHero}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-background/10" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <DashHeader
+              name={name}
+              avatarUrl={profile?.avatar_url ?? null}
+              unreadCount={unreadCount}
+              actions={<ScheduleReuploadButton onTasksCreated={() => window.location.reload()} />}
+            />
+            <DashStatCards weeklyGoalDone={weeklyGoalDone} streakDays={streakDays} totalPoints={totalPoints} />
+          </div>
+        </section>
 
         {/* Streak Recovery Dialog */}
         <StreakRecoveryDialog
@@ -167,8 +179,6 @@ const Dashboard = () => {
         <RankCelebration />
 
         <div className="animate-fade-in">
-          <DashStatCards weeklyGoalDone={weeklyGoalDone} streakDays={streakDays} totalPoints={totalPoints} />
-
           {/* Assistant + Study Plan + Treasure Map row */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             <DashAssistantCard />
@@ -176,55 +186,23 @@ const Dashboard = () => {
               tasks={todayTasks}
               onToggle={handleToggleTask}
               loading={loading}
-              onAdd={(title) => addTask({ title, due_date: new Date().toISOString() })}
+              onAdd={(title) => addTask({ title, due_date: new Date().toISOString(), priority: 'medium' })}
             />
             <DashQuestCard percent={questPercent} />
           </div>
 
           {/* Materials + Quizzes + Reports row */}
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <DashMaterialsCard counts={materialCounts} />
             <DashQuizCard />
             <DashReportsCard />
-          </div>
-
-          {/* Leaderboard row */}
-          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="xl:col-span-2">
-              <DashLeaderboardCard />
-            </div>
-            <DashTipCardMini />
+            <DashLeaderboardCard />
           </div>
 
           <DashTipBar />
         </div>
       </div>
     </div>
-  );
-};
-
-// Small companion card next to the leaderboard — quick jump to Focus Mode
-// so the full-screen focus experience stays one tap away.
-const DashTipCardMini = () => {
-  const navigate = useNavigate();
-  const { language } = useLanguage();
-  const ar = language === 'ar';
-  return (
-    <button
-      onClick={() => navigate('/focus')}
-      className="glass-card flex min-h-[240px] flex-col items-start justify-between rounded-3xl p-5 text-start transition-transform hover:scale-[1.01]"
-    >
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent">🎯</div>
-      <div>
-        <h3 className="font-display text-lg font-extrabold text-navy">{ar ? 'وضع التركيز' : 'Focus Mode'}</h3>
-        <p className="mt-1 text-xs font-bold text-muted-foreground">
-          {ar ? 'مؤقت بومودورو + أصوات هادية تساعدك تركز' : 'Pomodoro timer + calm sounds for deep focus'}
-        </p>
-        <span className="mt-3 inline-block rounded-full bg-gradient-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground shadow-glow">
-          {ar ? 'ابدأ جلسة' : 'Start a Session'}
-        </span>
-      </div>
-    </button>
   );
 };
 
