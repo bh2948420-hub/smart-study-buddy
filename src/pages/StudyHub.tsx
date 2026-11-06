@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { ElementType } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { isSameDay } from 'date-fns';
@@ -94,8 +95,8 @@ const StudyHub = () => {
 
   const handleStartStudy = async () => {
     if (activeSession) {
-      const duration = await endSession();
-      await syncFocusSession(duration ?? 0);
+      const endedSession = await endSession();
+      await syncFocusSession(endedSession?.duration_minutes ?? 0);
       setShowTimer(false);
     } else {
       setShowTimer(true);
@@ -105,8 +106,8 @@ const StudyHub = () => {
 
   const handleSessionComplete = async (duration: number) => {
     if (activeSession) {
-      const ended = await endSession();
-      await syncFocusSession(ended ?? duration);
+      const endedSession = await endSession();
+      await syncFocusSession(endedSession?.duration_minutes ?? duration);
     }
   };
 
@@ -117,7 +118,7 @@ const StudyHub = () => {
 
   const name = profile?.display_name || user?.email?.split('@')[0] || (language === 'ar' ? 'زميلتي' : 'Student');
 
-  const tabs: { id: HubTab; label: string; icon: React.ElementType }[] = [
+  const tabs: { id: HubTab; label: string; icon: ElementType }[] = [
     { id: 'plan', label: ar('خطة المذاكرة', 'Study Plan'), icon: CalendarCheck2 },
     { id: 'focus', label: ar('التركيز والمؤقت', 'Focus & Timer'), icon: Timer },
     { id: 'practice', label: ar('التمرين والتحدّيات', 'Practice & Challenges'), icon: ClipboardCheck },
